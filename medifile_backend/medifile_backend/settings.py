@@ -42,6 +42,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', # this must be above NB: dont forget
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -49,7 +50,22 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
+
+# Reminder to use CORS_ALLOW_ALL_ORIGINS = False and set CORS_ALLOWED_ORIGINS in production to protect your backend.
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",     # React web dev server
+    "http://127.0.0.1:3000",
+    "http://localhost:19006",    # Expo Go (React Native web)
+    "http://192.168.0.100:8081", # Your LAN IP for mobile device testing
+    # Add your production domain here
+]
+
+
+# Reminder to self (Percy), this allows all origins (for testing)
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 ROOT_URLCONF = 'medifile_backend.urls'
 
