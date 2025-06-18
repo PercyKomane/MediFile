@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'rest_framework',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -58,7 +59,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",     # React web dev server
     "http://127.0.0.1:3000",
     "http://localhost:19006",    # Expo Go (React Native web)
-    "http://192.168.0.100:8081", # Your LAN IP for mobile device testing
+    "http://192.168.0.100:8081",
+    "exp://192.168.88.253.8081", # Your LAN IP for mobile device testing
     # Add your production domain here
 ]
 
