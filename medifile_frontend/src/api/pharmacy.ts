@@ -30,6 +30,34 @@ export interface Cart {
   item_count: number;
 }
 
+export interface OrderItem {
+  order_item_id: number;
+  medicine: Medicine;
+  quantity: number;
+  price: string;
+  order: number;
+}
+
+export interface Order {
+  order_id: number;
+  items: OrderItem[];
+  status: string;
+  total_amount: string;
+  shipping_address: {
+    full_name: string;
+    phone: string;
+    address: string;
+    city: string;
+    postal_code: string;
+    province: string;
+  };
+  delivery_option: string;
+  payment_method: string;
+  created_at: string;
+  updated_at: string;
+  user: number;
+}
+
 // Medicine APIs
 export const listMedicines = async (params?: { search?: string; category?: string }) => {
   const response = await API.get('/medicines/', { params });
@@ -130,6 +158,6 @@ export const getOrderById = async (orderId: number) => {
 };
 
 export const cancelOrder = async (orderId: number) => {
-  const response = await API.post(`/orders/${orderId}/cancel/`);
+  const response = await API.post(`/orders/${orderId}/cancel_order/`);
   return response.data;
 };

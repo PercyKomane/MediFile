@@ -1,0 +1,50 @@
+# Node/Expo
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo-dev-client/
+
+# React Native
+ios/
+android/
+
+# TypeScript
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python/Django
+__pycache__/
+*.py[cod]
+*.sqlite3
+/db.sqlite3
+/media/
+*.pot
+*.pyc
+
+# Environments
+.env
+.venv/
+venv/
+ENV/
+
+# Coverage/pytest
+.coverage
+coverage/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+*.orig
+*.rej

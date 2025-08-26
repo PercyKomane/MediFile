@@ -20,6 +20,11 @@ export const register = async (payload: {
   return data;
 };
 
+export const refreshToken = async (refresh: string) => {
+  const { data } = await API.post('/auth/token/refresh/', { refresh });
+  return data as { access: string };
+};
+
 
 
 

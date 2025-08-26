@@ -131,14 +131,17 @@ useEffect(() => {
             </View>
             <Text style={styles.serviceText}>Pharmacy</Text>
           </TouchableOpacity>
-          <View style={styles.serviceIcon}>
+          <TouchableOpacity style={styles.serviceIcon} onPress={() => navigation.navigate('HospitalList')}>
             <MaterialIcons name="local-hospital" size={32} color="#199A8E" />
             <Text style={styles.serviceText}>Hospital</Text>
-          </View>
-          <View style={styles.serviceIcon}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.serviceIcon}
+            onPress={() => navigation.navigate('EmergencyRequest')}
+          >
             <FontAwesome5 name="ambulance" size={32} color="#199A8E" />
             <Text style={styles.serviceText}>Ambulance</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Health Banner */}

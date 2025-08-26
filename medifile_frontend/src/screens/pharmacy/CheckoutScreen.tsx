@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,13 @@ import {
   Alert,
   StatusBar,
   Switch,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { checkout, Medicine } from '../../api/pharmacy';
 import { useAuth } from '../../context/AuthContext';
+import { getPaymentMethods, PaymentMethod } from '../../api/payment';
 
 interface CheckoutItem {
   medicine: Medicine;
@@ -55,6 +57,12 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
   const [deliveryOption, setDeliveryOption] = useState('standard');
   const [saveAddress, setSaveAddress] = useState(false);
   const [processing, setProcessing] = useState(false);
+  
+  // Payment method states
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false);
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
 
   // Calculate totals
   const subtotal = items.reduce((sum, item) => {
@@ -65,6 +73,29 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
   const tax = subtotal * 0.15;
   const total = subtotal + deliveryFee + tax;
 
+  // Load payment methods on component mount
+  useEffect(() => {
+    loadPaymentMethods();
+  }, []);
+
+  const loadPaymentMethods = async () => {
+    try {
+      setLoadingPaymentMethods(true);
+      const methods = await getPaymentMethods();
+      setPaymentMethods(methods);
+      
+      // Set default payment method if available
+      const defaultMethod = methods.find(method => method.is_default);
+      if (defaultMethod) {
+        setSelectedPaymentMethod(defaultMethod);
+      }
+    } catch (error) {
+      console.error('Failed to load payment methods:', error);
+    } finally {
+      setLoadingPaymentMethods(false);
+    }
+  };
+
   const handleCheckout = async () => {
     // Validate form
     if (!shippingDetails.fullName || !shippingDetails.phone || !shippingDetails.address) {
@@ -72,8 +103,13 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
       return;
     }
 
-    if (paymentMethod === 'card' && (!cardDetails.cardNumber || !cardDetails.expiryDate || !cardDetails.cvv)) {
+    if (paymentMethod === 'new_card' && (!cardDetails.cardNumber || !cardDetails.expiryDate || !cardDetails.cvv)) {
       Alert.alert('Error', 'Please fill in all card details');
+      return;
+    }
+
+    if (paymentMethod === 'saved' && !selectedPaymentMethod) {
+      Alert.alert('Error', 'Please select a payment method');
       return;
     }
 
@@ -269,19 +305,69 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
           
+          {/* Existing Payment Methods */}
+          {paymentMethods.length > 0 && (
+            <View style={styles.existingPaymentMethods}>
+              <Text style={styles.subsectionTitle}>Saved Payment Methods</Text>
+              
+              {paymentMethods.map((method) => (
+                <TouchableOpacity
+                  key={method.payment_method_id}
+                  style={[
+                    styles.paymentMethodCard,
+                    selectedPaymentMethod?.payment_method_id === method.payment_method_id && styles.selectedPaymentMethod
+                  ]}
+                  onPress={() => {
+                    setSelectedPaymentMethod(method);
+                    setPaymentMethod('saved');
+                  }}
+                >
+                  <View style={styles.paymentMethodInfo}>
+                    <Ionicons 
+                      name={method.type === 'card' ? 'card-outline' : method.type === 'bank' ? 'business-outline' : 'wallet-outline'} 
+                      size={20} 
+                      color={selectedPaymentMethod?.payment_method_id === method.payment_method_id ? '#199A8E' : '#666'} 
+                    />
+                    <View style={styles.paymentMethodDetails}>
+                      <Text style={styles.paymentMethodName}>{method.name}</Text>
+                      <Text style={styles.paymentMethodNumber}>{method.masked_number}</Text>
+                      {method.expiry_date && (
+                        <Text style={styles.paymentMethodExpiry}>Expires: {method.expiry_date}</Text>
+                      )}
+                    </View>
+                  </View>
+                  {method.is_default && (
+                    <View style={styles.defaultBadge}>
+                      <Text style={styles.defaultText}>Default</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* New Payment Options */}
+          <Text style={styles.subsectionTitle}>Other Payment Options</Text>
+          
           <TouchableOpacity
-            style={[styles.paymentOption, paymentMethod === 'card' && styles.selectedPayment]}
-            onPress={() => setPaymentMethod('card')}
+            style={[styles.paymentOption, paymentMethod === 'new_card' && styles.selectedPayment]}
+            onPress={() => {
+              setPaymentMethod('new_card');
+              setSelectedPaymentMethod(null);
+            }}
           >
-            <Ionicons name="card-outline" size={24} color={paymentMethod === 'card' ? '#199A8E' : '#666'} />
-            <Text style={[styles.paymentText, paymentMethod === 'card' && styles.selectedPaymentText]}>
-              Credit/Debit Card
+            <Ionicons name="card-outline" size={24} color={paymentMethod === 'new_card' ? '#199A8E' : '#666'} />
+            <Text style={[styles.paymentText, paymentMethod === 'new_card' && styles.selectedPaymentText]}>
+              Use New Card
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.paymentOption, paymentMethod === 'cash' && styles.selectedPayment]}
-            onPress={() => setPaymentMethod('cash')}
+            onPress={() => {
+              setPaymentMethod('cash');
+              setSelectedPaymentMethod(null);
+            }}
           >
             <Ionicons name="cash-outline" size={24} color={paymentMethod === 'cash' ? '#199A8E' : '#666'} />
             <Text style={[styles.paymentText, paymentMethod === 'cash' && styles.selectedPaymentText]}>
@@ -289,7 +375,7 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
             </Text>
           </TouchableOpacity>
 
-          {paymentMethod === 'card' && (
+          {paymentMethod === 'new_card' && (
             <View style={styles.cardDetails}>
               <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Card Number</Text>
@@ -521,6 +607,66 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#0F8A83',
+  },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+    marginTop: 15,
+  },
+  existingPaymentMethods: {
+    marginBottom: 15,
+  },
+  paymentMethodCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+  },
+  selectedPaymentMethod: {
+    borderColor: '#199A8E',
+    backgroundColor: '#f0f9f8',
+  },
+  paymentMethodInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  paymentMethodDetails: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  paymentMethodName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  paymentMethodNumber: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+  },
+  paymentMethodExpiry: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  defaultBadge: {
+    backgroundColor: '#199A8E',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  defaultText: {
+    fontSize: 10,
+    color: 'white',
+    fontWeight: 'bold',
   },
   paymentOption: {
     flexDirection: 'row',
