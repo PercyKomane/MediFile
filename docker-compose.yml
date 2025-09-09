@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend/medifile_backend
+      dockerfile: Dockerfile
+    container_name: medifile-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/medifile_backend:/app
+      - media_data:/app/media
+    environment:
+      - DJANGO_SETTINGS_MODULE=medifile_backend.settings
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  # Optional: run Expo web in a container (mobile dev is better with local Expo Go)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: medifile-frontend
+    ports:
+      - "19006:19006"   # Expo web
+      - "8081:8081"     # Metro bundler (for completeness)
+    working_dir: /app
+    environment:
+      - EXPO_USE_LOCAL_NETWORK=1
+    command: ["npx", "expo", "start", "--web"]
+    volumes:
+      - ./medifile_frontend:/app
+    restart: unless-stopped
+
+volumes:
+  media_data:
+

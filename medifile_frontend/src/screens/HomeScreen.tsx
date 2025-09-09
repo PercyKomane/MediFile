@@ -104,6 +104,13 @@ useEffect(() => {
             placeholder="Search doctor, drugs, articles..."
             placeholderTextColor="#999"
             style={styles.searchInput}
+            returnKeyType="search"
+            onSubmitEditing={(e) => {
+              const q = e.nativeEvent.text?.trim();
+              if (q) {
+                navigation.navigate('SearchResults', { query: q });
+              }
+            }}
           />
         </View>
 

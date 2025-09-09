@@ -7,7 +7,8 @@ from .views import (
     RegisterView, ConversationViewSet, MessageViewSet,
     MyProfileViewSet, MyMedicalHistoryViewSet, SlotViewSet, my_patients_view,
     MedicineViewSet, CartViewSet, OrderViewSet, PaymentMethodViewSet,
-    FAQViewSet, UserQuestionViewSet, AmbulanceRequestViewSet, SupportTicketViewSet
+    FAQViewSet, UserQuestionViewSet, AmbulanceRequestViewSet, SupportTicketViewSet,
+    MyVitalsViewSet, MyLabResultsViewSet, MySymptomsViewSet, MyDnaTestsViewSet, MyMedicationsViewSet
 )
 
 router = DefaultRouter()
@@ -23,6 +24,11 @@ router.register(r'conversations', ConversationViewSet, basename='conversations')
 router.register(r'messages', MessageViewSet, basename='messages')
 router.register(r'me', MyProfileViewSet, basename='me')
 router.register(r'me/medical-history', MyMedicalHistoryViewSet, basename='my-medical-history')
+router.register(r'me/vitals', MyVitalsViewSet, basename='my-vitals')
+router.register(r'me/lab-results', MyLabResultsViewSet, basename='my-lab-results')
+router.register(r'me/symptoms', MySymptomsViewSet, basename='my-symptoms')
+router.register(r'me/dna-tests', MyDnaTestsViewSet, basename='my-dna-tests')
+router.register(r'me/medications', MyMedicationsViewSet, basename='my-medications')
 router.register(r'medicines', MedicineViewSet)
 router.register(r'cart', CartViewSet, basename='cart')
 router.register(r'orders', OrderViewSet, basename='orders')

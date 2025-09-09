@@ -9,14 +9,14 @@ import {
   Platform,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DOCTORS } from '../data/doctors';
 import { MessagesStackParamList } from '../navigation/MessagesNavigator';
-import { useMessages } from '../context/MessagesContext';
 import * as MessagesAPI from '../api/messages';
+import { getDoctor } from '../api/doctors';
 
 type Sender = 'doctor' | 'user' | 'system' | 'typing';
 
@@ -25,6 +25,7 @@ type ChatMessage = {
   text?: string;
   sender: Sender;
   time?: string;
+  createdAt?: number;
 };
 
 const AVATAR_FALLBACK = require('../assets/images/doctors/doctor1.png');
@@ -33,42 +34,93 @@ const MessagesScreen = () => {
   const [text, setText] = useState('');
   const navigation = useNavigation();
   const route = useRoute<RouteProp<MessagesStackParamList, 'Chat'>>();
+  const insets = useSafeAreaInsets();
   const doctorId = route.params?.doctorId;
   const conversationId = (route.params as any)?.conversationId as number | undefined;
+  const [doctorName, setDoctorName] = useState<string | undefined>(undefined);
+  const [doctorUserId, setDoctorUserId] = useState<number | undefined>(undefined);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const doctor = DOCTORS.find((d) => d.id === doctorId);
-  const { getConversation, sendMessage, seedConversationIfMissing } = useMessages();
-  const messages = getConversation(doctorId ?? 'unknown');
 
-  useEffect(() => {
-    if (doctorId && doctor) {
-      seedConversationIfMissing(doctorId, doctor.name);
-    }
-  }, [doctorId]);
-
-  // Optionally fetch existing history from backend if we have conversationId
+  // Load conversation details (doctor id/name) and messages from backend
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       if (!conversationId) return;
       try {
-        const data = await MessagesAPI.listMessages(conversationId);
-        // For simplicity, we do not merge into local state here; keeping demo state.
-      } catch (e) {
-        // ignore in demo
+        const conv = await MessagesAPI.getConversation(conversationId);
+        const backendDoctorId = conv?.doctor;
+        if (backendDoctorId) {
+          const doc = await getDoctor(backendDoctorId);
+          const name = doc?.user?.profile ? `Dr. ${doc.user.profile.first_name} ${doc.user.profile.last_name}` : undefined;
+          if (mounted) {
+            setDoctorName(name);
+            setDoctorUserId(doc?.user?.user_id);
+          }
+        }
+      } catch {
+        // ignore
       }
     };
     load();
     return () => { mounted = false; };
   }, [conversationId]);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadMessages = async () => {
+      if (!conversationId) return;
+      try {
+        const data = await MessagesAPI.listMessages(conversationId);
+        const transformed: ChatMessage[] = (data || []).map((m: any) => ({
+          id: String(m.message_id),
+          text: m.text,
+          sender: m.sender === doctorUserId ? 'doctor' : 'user',
+          time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          createdAt: new Date(m.created_at).getTime(),
+        }));
+        if (mounted) setMessages(transformed);
+      } catch {
+        // ignore
+      }
+    };
+    loadMessages();
+    return () => { mounted = false; };
+  }, [conversationId, doctorUserId]);
+
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    if (doctorId) sendMessage(doctorId, trimmed);
-    setText('');
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+    if (!conversationId) return;
+    try {
+      const sent = await MessagesAPI.sendMessage(conversationId, trimmed);
+      const newMsg: ChatMessage = {
+        id: String(sent?.message_id ?? Date.now()),
+        text: sent?.text ?? trimmed,
+        sender: 'user',
+        time: new Date(sent?.created_at ?? Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: new Date(sent?.created_at ?? Date.now()).getTime(),
+      };
+      setMessages((prev) => [...prev, newMsg]);
+      setText('');
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+    } catch {
+      // optionally surface error
+    }
+  };
+
+  const formatRelative = (ts?: number) => {
+    if (!ts) return undefined;
+    const diffMs = Date.now() - ts;
+    const mins = Math.max(0, Math.floor(diffMs / 60000));
+    if (mins < 1) return 'now';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hr${hrs > 1 ? 's' : ''} ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
   };
 
   const renderItem = ({ item }: { item: ChatMessage }) => {
@@ -97,20 +149,28 @@ const MessagesScreen = () => {
     }
 
     const isUser = item.sender === 'user';
+    if (!isUser) {
+      return (
+        <View style={{ marginTop: 12 }}>
+          <View style={styles.row}>
+            <Image source={doctor?.avatar ?? AVATAR_FALLBACK} style={styles.avatar} />
+            <View style={{ marginLeft: 10, flex: 1 }}>
+              <Text style={styles.senderName}>{doctorName ?? 'Doctor'}</Text>
+              <Text style={styles.senderSub}>{formatRelative(item.createdAt)}</Text>
+              <View style={[styles.bubble, styles.doctorBubble, { marginTop: 8, alignSelf: 'flex-start' }]}>
+                <Text style={[styles.messageText, styles.doctorText]}>{item.text}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={{ marginVertical: 8 }}>
-        {!isUser && (
-          <Text style={styles.timestamp}>{doctor?.name ?? 'Doctor'}    {item.time}</Text>
-        )}
-        {isUser && (
-          <Text style={[styles.timestamp, { alignSelf: 'flex-end' }]}>{item.time}</Text>
-        )}
-        <View style={[styles.row, isUser ? styles.rowEnd : undefined]}>
-          {!isUser && <Image source={doctor?.avatar ?? AVATAR_FALLBACK} style={styles.avatar} />}
-          <View style={[styles.bubble, isUser ? styles.userBubble : styles.doctorBubble]}>
-            <Text style={[styles.messageText, isUser ? styles.userText : styles.doctorText]}>
-              {item.text}
-            </Text>
+        <View style={[styles.row, styles.rowEnd]}>
+          <View style={[styles.bubble, styles.userBubble]}>
+            <Text style={[styles.messageText, styles.userText]}>{item.text}</Text>
           </View>
         </View>
       </View>
@@ -120,21 +180,23 @@ const MessagesScreen = () => {
   const keyExtractor = (item: ChatMessage) => item.id;
 
   return (
-    <SafeAreaView style={styles.screen}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color="#111" />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>{doctor?.name ?? 'Doctor'}</Text>
+    <View style={styles.screen}>
+      {/* Header inside top safe area */}
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: '#fff' }}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="chevron-back" size={24} color="#111" />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>{doctorName ?? doctor?.name ?? 'Doctor'}</Text>
+          </View>
+          <View style={styles.headerActions}>
+            <Ionicons name="call-outline" size={20} color="#111" style={styles.headerIcon} />
+            <Ionicons name="videocam-outline" size={20} color="#111" style={styles.headerIcon} />
+            <Ionicons name="ellipsis-vertical" size={20} color="#111" />
+          </View>
         </View>
-        <View style={styles.headerActions}>
-          <Ionicons name="call-outline" size={20} color="#111" style={styles.headerIcon} />
-          <Ionicons name="videocam-outline" size={20} color="#111" style={styles.headerIcon} />
-          <Ionicons name="ellipsis-vertical" size={20} color="#111" />
-        </View>
-      </View>
+      </SafeAreaView>
 
       {/* Messages */}
       <FlatList
@@ -150,9 +212,9 @@ const MessagesScreen = () => {
       {/* Input */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom + 10 : 0}
       >
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { paddingBottom: Math.max(10, 10 - insets.bottom) }]}> 
           <Ionicons name="attach" size={20} color="#8a8a8a" />
           <TextInput
             style={styles.textInput}
@@ -166,7 +228,7 @@ const MessagesScreen = () => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -185,8 +247,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E6E8EB',
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     textAlign: 'left',
     color: '#111',
     marginLeft: 6,
@@ -205,15 +267,15 @@ const styles = StyleSheet.create({
   systemCard: {
     alignSelf: 'center',
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E6E8EB',
     paddingVertical: 14,
     paddingHorizontal: 18,
-    marginVertical: 6,
+    marginVertical: 12,
   },
   systemTitle: {
-    color: '#008080',
+    color: '#16A085',
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 4,
@@ -223,11 +285,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
-  timestamp: {
-    fontSize: 11,
-    color: '#9AA0A6',
-    marginBottom: 4,
-  },
+  senderName: { fontWeight: '700', color: '#111' },
+  senderSub: { color: '#9AA0A6', fontSize: 12, marginTop: 2 },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -243,21 +302,21 @@ const styles = StyleSheet.create({
     maxWidth: '78%',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 14,
+    borderRadius: 12,
   },
   doctorBubble: {
-    backgroundColor: '#EAF1F1',
+    backgroundColor: '#F3F3F3',
     borderTopLeftRadius: 6,
   },
   userBubble: {
-    backgroundColor: '#008080',
+    backgroundColor: '#199A8E',
     borderTopRightRadius: 6,
   },
   messageText: {
     fontSize: 14,
     lineHeight: 20,
   },
-  doctorText: { color: '#263238' },
+  doctorText: { color: '#555555' },
   userText: { color: '#fff' },
 
   typingDots: {
@@ -278,7 +337,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#E6E8EB',
     gap: 10,
@@ -286,16 +345,16 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#F2F4F7',
-    borderRadius: 24,
+    paddingVertical: 12,
+    backgroundColor: '#F3F6F6',
+    borderRadius: 28,
     color: '#1F2937',
   },
   sendButton: {
     backgroundColor: '#16A085',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 28,
   },
   sendLabel: { color: '#fff', fontWeight: '700' },
 });

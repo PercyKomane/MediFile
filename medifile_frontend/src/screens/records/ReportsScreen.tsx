@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { fetchMyMedicalHistory, listPatientMedications, listLabResults, listSymptoms } from '../../api/records';
 
 type ReportItem = {
   id: string;
@@ -11,34 +12,64 @@ type ReportItem = {
   counts?: Record<string, string | number>;
 };
 
-const DUMMY: ReportItem[] = [
-  {
-    id: 'r1',
-    date: 'Monday, 27 March 2023',
-    title: 'Allergies',
-    details: ['Total Record: 4', 'Peanuts Allergies — Severe', 'Pollen — Mild'],
-  },
-  {
-    id: 'r2',
-    date: 'Wednesday, 10 April 2023',
-    title: 'Allergies',
-    details: ['Total Record: 3', 'Jone Smith — Diabetes', 'Jone Kelly — Mild', 'Joe doe — Blood pressure'],
-  },
-  {
-    id: 'r3',
-    date: 'Wednesday, 10 April 2023',
-    title: 'Diagnoses',
-    details: ['Total Record: 3', 'Cancer — sample data', 'Arthritis — sample data', 'Back Pain — sample data'],
-  },
-];
-
 export default function ReportsScreen({ navigation }: any) {
   const [query, setQuery] = useState('');
+  const [reports, setReports] = useState<ReportItem[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [history, meds, labs, symptoms] = await Promise.all([
+          fetchMyMedicalHistory(), listPatientMedications(), listLabResults(), listSymptoms()
+        ]);
+        const today = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const items: ReportItem[] = [
+          {
+            id: 'allergies',
+            date: today,
+            title: 'Allergies',
+            details: history.filter((h: any) => String(h.diagnosis || '').toLowerCase().includes('allerg')).map((h: any) => `${h.diagnosis}`),
+            counts: { total: history.length },
+          },
+          {
+            id: 'diagnoses',
+            date: today,
+            title: 'Diagnoses',
+            details: history.map((h: any) => `${h.diagnosis}`),
+            counts: { total: history.length },
+          },
+          {
+            id: 'medications',
+            date: today,
+            title: 'Medications',
+            details: meds.map((m: any) => `${m.name}${m.dosage ? ' — ' + m.dosage : ''}`),
+            counts: { total: meds.length },
+          },
+          {
+            id: 'lab',
+            date: today,
+            title: 'Lab Tests',
+            details: labs.map((l: any) => `${l.test_name} — ${l.result_value} ${l.units || ''}`.trim()),
+            counts: { total: labs.length },
+          },
+          {
+            id: 'symptoms',
+            date: today,
+            title: 'Symptoms',
+            details: symptoms.map((s: any) => `${s.description} — ${String(s.severity).toUpperCase()}`),
+            counts: { total: symptoms.length },
+          },
+        ];
+        setReports(items);
+      } catch {}
+    })();
+  }, []);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return DUMMY;
-    return DUMMY.filter((r) => r.title.toLowerCase().includes(q) || r.details.some((d) => d.toLowerCase().includes(q)));
-  }, [query]);
+    if (!q) return reports;
+    return reports.filter((r) => r.title.toLowerCase().includes(q) || r.details.some((d) => d.toLowerCase().includes(q)));
+  }, [query, reports]);
 
   return (
     <SafeAreaView style={styles.screen}>

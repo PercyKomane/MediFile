@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, RefreshControl, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { listAvailableSlots, bookAppointment } from '../../api/appointments';
+import { listAvailableSlots, bookAppointment, payAppointment } from '../../api/appointments';
 import { listDoctors } from '../../api/doctors';
 import { API } from '../../api/client';
 import { Ionicons } from '@expo/vector-icons';
@@ -82,10 +82,21 @@ export default function BookAppointmentScreen({ navigation, route }: any) {
 
     setLoading(true);
     try {
-      await bookAppointment(slotId);
-      Alert.alert('Success', 'Appointment booked successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      const appt = await bookAppointment(slotId);
+      Alert.alert(
+        'Appointment Booked!',
+        'Do you want to proceed to checkout now?',
+        [
+          { text: 'Later', style: 'cancel', onPress: () => navigation.goBack() },
+          { text: 'Go to Checkout', onPress: () => {
+              const appointmentId = appt.appointment_id || appt.id;
+              const amount = 300; // could be computed from doctor fees in future
+              const doctorName = getSelectedDoctor() ? `Dr. ${getSelectedDoctor()?.user?.profile?.first_name} ${getSelectedDoctor()?.user?.profile?.last_name}` : undefined;
+              const dateTimeISO = appt?.date_time;
+              navigation.navigate('AppointmentCheckout', { appointmentId, amount, doctorName, dateTimeISO });
+            } }
+        ]
+      );
     } catch (error: any) {
       console.error('Failed to book appointment:', error);
       if (error?.response?.status === 401) {

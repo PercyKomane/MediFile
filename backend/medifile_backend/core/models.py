@@ -160,6 +160,109 @@ class MedicalHistory(models.Model):
         return f"History #{self.record_id} for {self.patient}"
 
 
+# Additional patient record models
+class VitalSign(models.Model):
+    """Basic vital signs captured for a patient."""
+
+    vital_id = models.BigAutoField(primary_key=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="vitals")
+    recorded_at = models.DateTimeField(default=timezone.now)
+    temperature_c = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    systolic_bp = models.IntegerField(null=True, blank=True)
+    diastolic_bp = models.IntegerField(null=True, blank=True)
+    heart_rate_bpm = models.IntegerField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "vital_signs"
+        ordering = ["-recorded_at"]
+
+    def __str__(self) -> str:
+        return f"Vitals #{self.vital_id} for {self.patient_id} @ {self.recorded_at}"
+
+
+class LabResult(models.Model):
+    """Laboratory test results for a patient."""
+
+    lab_result_id = models.BigAutoField(primary_key=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="lab_results")
+    test_name = models.CharField(max_length=255)
+    result_value = models.CharField(max_length=255)
+    units = models.CharField(max_length=50, blank=True)
+    reference_range = models.CharField(max_length=100, blank=True)
+    recorded_at = models.DateField(default=timezone.now)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "lab_results"
+        ordering = ["-recorded_at", "test_name"]
+
+    def __str__(self) -> str:
+        return f"{self.test_name} for {self.patient_id}: {self.result_value} {self.units}"
+
+
+class SymptomEntry(models.Model):
+    """Symptom log entries for a patient."""
+
+    class Severity(models.TextChoices):
+        MILD = "mild", _("Mild")
+        MODERATE = "moderate", _("Moderate")
+        SEVERE = "severe", _("Severe")
+
+    symptom_id = models.BigAutoField(primary_key=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="symptoms")
+    description = models.TextField()
+    severity = models.CharField(max_length=10, choices=Severity.choices, default=Severity.MILD)
+    onset_date = models.DateField(default=timezone.now)
+    resolved_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "symptom_entries"
+        ordering = ["-onset_date"]
+
+    def __str__(self) -> str:
+        return f"Symptom #{self.symptom_id} ({self.severity})"
+
+
+class DnaTest(models.Model):
+    """DNA / genetic test summary results."""
+
+    dna_test_id = models.BigAutoField(primary_key=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="dna_tests")
+    test_name = models.CharField(max_length=255)
+    trait = models.CharField(max_length=255, blank=True)
+    interpretation = models.TextField(blank=True)
+    recorded_at = models.DateField(default=timezone.now)
+
+    class Meta:
+        db_table = "dna_tests"
+        ordering = ["-recorded_at", "test_name"]
+
+    def __str__(self) -> str:
+        return f"DNA {self.test_name} - {self.trait}"
+
+
+class PatientMedicationRecord(models.Model):
+    """Active or historical medications and supplements for a patient."""
+
+    med_record_id = models.BigAutoField(primary_key=True)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="medication_records")
+    name = models.CharField(max_length=255)
+    dosage = models.CharField(max_length=100, blank=True)
+    frequency = models.CharField(max_length=100, blank=True)
+    start_date = models.DateField(default=timezone.now)
+    end_date = models.DateField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "patient_medications"
+        ordering = ["-is_active", "-start_date", "name"]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({'active' if self.is_active else 'inactive'})"
+
 # ------------------------------
 # Healthcare providers
 # ------------------------------
@@ -237,6 +340,16 @@ class Appointment(models.Model):
     date_time = models.DateTimeField()
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.SCHEDULED)
     notes = models.TextField(blank=True)
+    # Payment fields (simple demo implementation)
+    class PaymentStatus(models.TextChoices):
+        UNPAID = "unpaid", _("Unpaid")
+        PAID = "paid", _("Paid")
+        FAILED = "failed", _("Failed")
+
+    payment_status = models.CharField(max_length=10, choices=PaymentStatus.choices, default=PaymentStatus.UNPAID)
+    payment_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    payment_reference = models.CharField(max_length=100, blank=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "appointments"

@@ -40,6 +40,11 @@ export const bookAppointment = async (slotId: number) => {
   return data;
 };
 
+export const payAppointment = async (appointmentId: number, payload: { amount: number; reference?: string }) => {
+  const { data } = await API.post(`/appointments/${appointmentId}/pay/`, payload);
+  return data;
+};
+
 export const listMyPatients = async () => {
   const { data } = await API.get('/appointments/my-patients/');
   return data as any[];

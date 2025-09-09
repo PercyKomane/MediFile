@@ -1,0 +1,15 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY medifile_frontend/package.json medifile_frontend/package-lock.json* ./
+RUN npm ci --no-audit --no-fund
+
+COPY medifile_frontend/ ./
+
+EXPOSE 8081 19006
+
+# Default to running Expo web for simple containerized preview
+CMD ["npx", "expo", "start", "--web"]
+
+

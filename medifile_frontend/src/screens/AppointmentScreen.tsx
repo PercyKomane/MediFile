@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 
 const AppointmentScreen = ({ navigation }: any) => {
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'scheduled' | 'completed' | 'canceled' | 'paid' | 'unpaid'>('all');
+  const [timeFilter, setTimeFilter] = useState<'upcoming' | 'past' | 'all'>('all');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { role, token } = useAuth();
@@ -46,6 +48,26 @@ const AppointmentScreen = ({ navigation }: any) => {
   useEffect(() => {
     loadAppointments();
   }, []);
+
+  const filteredAppointments = appointments.filter((appt) => {
+    const status = (appt.status || '').toLowerCase();
+    const paymentStatus = (appt.payment_status || '').toLowerCase();
+    const apptTime = new Date(appt.date_time).getTime();
+    const now = Date.now();
+
+    // status filter
+    if (statusFilter === 'scheduled' && status !== 'scheduled') return false;
+    if (statusFilter === 'completed' && status !== 'completed') return false;
+    if (statusFilter === 'canceled' && status !== 'canceled') return false;
+    if (statusFilter === 'paid' && paymentStatus !== 'paid') return false;
+    if (statusFilter === 'unpaid' && paymentStatus !== 'unpaid') return false;
+
+    // time filter
+    if (timeFilter === 'upcoming' && apptTime < now) return false;
+    if (timeFilter === 'past' && apptTime >= now) return false;
+
+    return true;
+  });
 
   const getStatusStyle = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -206,9 +228,49 @@ const AppointmentScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         )}
       </View>
+      {/* Filters */}
+      <View style={styles.filterBar}>
+        <View style={styles.filterRow}>
+          {(
+            [
+              { key: 'all', label: 'All' },
+              { key: 'scheduled', label: 'Scheduled' },
+              { key: 'completed', label: 'Completed' },
+              { key: 'canceled', label: 'Cancelled' },
+              { key: 'paid', label: 'Paid' },
+              { key: 'unpaid', label: 'Unpaid' },
+            ] as const
+          ).map(({ key, label }) => (
+            <TouchableOpacity
+              key={key}
+              style={[styles.chip, statusFilter === key && styles.chipActive]}
+              onPress={() => setStatusFilter(key)}
+            >
+              <Text style={[styles.chipText, statusFilter === key && styles.chipTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={[styles.filterRow, { marginTop: 8 }]}>
+          {(
+            [
+              { key: 'all', label: 'All Time' },
+              { key: 'upcoming', label: 'Upcoming' },
+              { key: 'past', label: 'Past' },
+            ] as const
+          ).map(({ key, label }) => (
+            <TouchableOpacity
+              key={key}
+              style={[styles.smallChip, timeFilter === key && styles.smallChipActive]}
+              onPress={() => setTimeFilter(key)}
+            >
+              <Text style={[styles.smallChipText, timeFilter === key && styles.smallChipTextActive]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
       
       <FlatList
-        data={appointments}
+        data={filteredAppointments}
         keyExtractor={(item) => String(item.appointment_id || item.id)}
         renderItem={renderItem}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
@@ -253,6 +315,53 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 8,
+  },
+  filterBar: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: '#0F8A83',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  chipActive: {
+    backgroundColor: '#0F8A83',
+  },
+  chipText: {
+    color: '#0F8A83',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  chipTextActive: {
+    color: '#fff',
+  },
+  smallChip: {
+    borderWidth: 1,
+    borderColor: '#CCE7E3',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#F3FAF9',
+  },
+  smallChipActive: {
+    borderColor: '#0F8A83',
+    backgroundColor: '#E8F3F1',
+  },
+  smallChipText: {
+    color: '#334B48',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  smallChipTextActive: {
+    color: '#0F8A83',
   },
   card: {
     justifyContent: 'center',

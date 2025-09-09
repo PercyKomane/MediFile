@@ -23,6 +23,7 @@ import FAQScreen from './src/screens/FAQScreen';
 import EditProfileScreen from './src/screens/EditProfileScreen';
 import EmergencyRequestScreen from './src/screens/EmergencyRequestScreen';
 import EmergencyTrackingScreen from './src/screens/EmergencyTrackingScreen';
+import AppointmentCheckoutScreen from './src/screens/appointments/AppointmentCheckoutScreen';
 
 
 const Stack = createStackNavigator<any>();
@@ -34,24 +35,25 @@ export default function App() {
         <AuthProvider>
           <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="Auth" component={AuthNavigator} />
-              <Stack.Screen name="BookAppointment" component={BookAppointmentScreen} />
-              <Stack.Screen name="DoctorsListForBooking" component={DoctorsListForBooking} />
-              <Stack.Screen name="ApproveAppointments" component={ApproveAppointmentsScreen} />
-              <Stack.Screen name="MyPatients" component={MyPatientsScreen} />
-              <Stack.Screen name="AppointmentDetails" component={AppointmentDetailsScreen} />
-              <Stack.Screen name="NewsDetail" component={NewsDetailScreen} />
-              <Stack.Screen name="Pharmacy" component={PharmacyScreen} />
-              <Stack.Screen name="MedicineDetail" component={MedicineDetailScreen} />
-              <Stack.Screen name="Cart" component={CartScreen} />
-              <Stack.Screen name="Checkout" component={CheckoutScreen} />
-              <Stack.Screen name="Orders" component={OrdersScreen} />
-              <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
-              <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
-              <Stack.Screen name="FAQ" component={FAQScreen} />
-              <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-              <Stack.Screen name="EmergencyRequest" component={EmergencyRequestScreen} />
-              <Stack.Screen name="EmergencyTracking" component={EmergencyTrackingScreen} />
+              <Stack.Screen name="Auth" component={AuthNavigator as React.ComponentType<any>} />
+              <Stack.Screen name="BookAppointment" component={BookAppointmentScreen as React.ComponentType<any>} />
+              <Stack.Screen name="DoctorsListForBooking" component={DoctorsListForBooking as React.ComponentType<any>} />
+              <Stack.Screen name="ApproveAppointments" component={ApproveAppointmentsScreen as React.ComponentType<any>} />
+              <Stack.Screen name="MyPatients" component={MyPatientsScreen as React.ComponentType<any>} />
+              <Stack.Screen name="AppointmentDetails" component={AppointmentDetailsScreen as React.ComponentType<any>} />
+              <Stack.Screen name="AppointmentCheckout" component={AppointmentCheckoutScreen as React.ComponentType<any>} />
+              <Stack.Screen name="NewsDetail" component={NewsDetailScreen as React.ComponentType<any>} />
+              <Stack.Screen name="Pharmacy" component={PharmacyScreen as React.ComponentType<any>} />
+              <Stack.Screen name="MedicineDetail" component={MedicineDetailScreen as React.ComponentType<any>} />
+              <Stack.Screen name="Cart" component={CartScreen as React.ComponentType<any>} />
+              <Stack.Screen name="Checkout" component={CheckoutScreen as React.ComponentType<any>} />
+              <Stack.Screen name="Orders" component={OrdersScreen as React.ComponentType<any>} />
+              <Stack.Screen name="OrderDetail" component={OrderDetailScreen as React.ComponentType<any>} />
+              <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen as React.ComponentType<any>} />
+              <Stack.Screen name="FAQ" component={FAQScreen as React.ComponentType<any>} />
+              <Stack.Screen name="EditProfile" component={EditProfileScreen as React.ComponentType<any>} />
+              <Stack.Screen name="EmergencyRequest" component={EmergencyRequestScreen as React.ComponentType<any>} />
+              <Stack.Screen name="EmergencyTracking" component={EmergencyTrackingScreen as React.ComponentType<any>} />
             </Stack.Navigator>
           </NavigationContainer>
         </AuthProvider>

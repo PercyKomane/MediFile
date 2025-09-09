@@ -2,19 +2,36 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchMyProfile, fetchMyMedicalHistory } from '../../api/records';
+import { fetchMyProfile, fetchMyMedicalHistory, listPatientMedications, listLabResults, listSymptoms, listVitals, listDnaTests } from '../../api/records';
 
 export default function RecordsHomeScreen({ navigation }: any) {
   const [profile, setProfile] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [meds, setMeds] = useState<any[]>([]);
+  const [labs, setLabs] = useState<any[]>([]);
+  const [symptoms, setSymptoms] = useState<any[]>([]);
+  const [vitals, setVitals] = useState<any[]>([]);
+  const [dnaTests, setDnaTests] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const p = await fetchMyProfile();
-        const h = await fetchMyMedicalHistory();
+        const [p, h, m, l, s, v, d] = await Promise.all([
+          fetchMyProfile(),
+          fetchMyMedicalHistory(),
+          listPatientMedications(),
+          listLabResults(),
+          listSymptoms(),
+          listVitals(),
+          listDnaTests(),
+        ]);
         setProfile(p);
         setHistory(h);
+        setMeds(m);
+        setLabs(l);
+        setSymptoms(s);
+        setVitals(v);
+        setDnaTests(d);
       } catch {}
     })();
   }, []);
@@ -35,10 +52,10 @@ export default function RecordsHomeScreen({ navigation }: any) {
         <RecordItem icon="pulse-outline" title="Diagnoses/Conditions" subtitle={`${history.length} records found`} onPress={() => navigation.navigate('Diagnoses')} />
         <RecordItem icon="newspaper-outline" title="Reports" subtitle={`Recent reports`} onPress={() => navigation.navigate('Reports')} />
         <RecordItem icon="stats-chart-outline" title="Charts" subtitle={`7 days`} onPress={() => navigation.navigate('Charts')} />
-        <RecordItem icon="medkit-outline" title="Medications & Supplements" subtitle={`4 records found`} onPress={() => {}} />
-        <RecordItem icon="thermometer-outline" title="Symptoms" subtitle={`2 records found`} onPress={() => {}} />
-        <RecordItem icon="flask-outline" title="Lab Tests" subtitle={`4 records found`} onPress={() => {}} />
-        <RecordItem icon="finger-print-outline" title="DNA Tests" subtitle={`2 records found`} onPress={() => {}} />
+        <RecordItem icon="medkit-outline" title="Medications & Supplements" subtitle={`${meds.length} records found`} onPress={() => navigation.navigate('Medications')} />
+        <RecordItem icon="thermometer-outline" title="Symptoms" subtitle={`${symptoms.length} records found`} onPress={() => navigation.navigate('Symptoms')} />
+        <RecordItem icon="flask-outline" title="Lab Tests" subtitle={`${labs.length} records found`} onPress={() => navigation.navigate('LabTests')} />
+        <RecordItem icon="finger-print-outline" title="DNA Tests" subtitle={`${dnaTests.length} records found`} onPress={() => navigation.navigate('DnaTests')} />
       </View>
     </ScrollView>
     </SafeAreaView>

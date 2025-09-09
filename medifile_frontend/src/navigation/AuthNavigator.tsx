@@ -13,8 +13,13 @@ import AccountSecurityScreen from '../screens/AccountSecurityScreen';
 import HelpSupportScreen from '../screens/HelpSupportScreen';
 import TicketDetailScreen from '../screens/TicketDetailScreen';
 import AboutScreen from '../screens/AboutScreen';
+import SearchResultsScreen from '../screens/SearchResultsScreen';
+import DoctorProfileScreen from '../screens/DoctorProfileScreen';
+import AppointmentCheckoutScreen from '../screens/appointments/AppointmentCheckoutScreen';
 
 const Stack = createStackNavigator();
+
+const LoadingScreen = () => null;
 
 const AuthNavigator = () => {
   const { token, isLoading } = useAuth();
@@ -25,7 +30,7 @@ const AuthNavigator = () => {
   if (isLoading) {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Loading" component={() => null} />
+        <Stack.Screen name="Loading" component={LoadingScreen} />
       </Stack.Navigator>
     );
   }
@@ -47,6 +52,9 @@ const AuthNavigator = () => {
           <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
           <Stack.Screen name="TicketDetail" component={TicketDetailScreen} />
           <Stack.Screen name="About" component={AboutScreen} />
+          <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
+          <Stack.Screen name="DoctorProfile" component={DoctorProfileScreen} />
+          <Stack.Screen name="AppointmentCheckout" component={AppointmentCheckoutScreen} />
         </>
       ) : (
         // User is not authenticated - show auth screens

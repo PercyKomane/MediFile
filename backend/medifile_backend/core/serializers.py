@@ -6,6 +6,7 @@ from .models import (
     PrescriptionItem, AuditLog, AccessToken,
     Conversation, Message, Medicine, Cart, CartItem, Order, OrderItem, PaymentMethod,
     FAQ, UserQuestion, AmbulanceRequest, PrivacySettings, AccountSecurity, SupportTicket, SupportReply,
+    VitalSign, LabResult, SymptomEntry, DnaTest, PatientMedicationRecord,
 )
 
 # --------------------------
@@ -323,6 +324,40 @@ from .models import MedicalHistory
 class MedicalHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = MedicalHistory
+        fields = '__all__'
+
+
+# --------------------------
+# Additional Records
+# --------------------------
+
+class VitalSignSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VitalSign
+        fields = '__all__'
+
+
+class LabResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LabResult
+        fields = '__all__'
+
+
+class SymptomEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SymptomEntry
+        fields = '__all__'
+
+
+class DnaTestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DnaTest
+        fields = '__all__'
+
+
+class PatientMedicationRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientMedicationRecord
         fields = '__all__'
 
 

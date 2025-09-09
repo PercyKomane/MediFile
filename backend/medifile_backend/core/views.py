@@ -5,7 +5,7 @@ from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes
-from .models import User, UserProfile, Patient, Doctor, Hospital, Appointment, Prescription, Conversation, Message, MedicalHistory, Medicine, Cart, CartItem, Order, OrderItem, PaymentMethod, FAQ, UserQuestion, AmbulanceRequest, PrivacySettings, AccountSecurity, SupportTicket, SupportReply
+from .models import User, UserProfile, Patient, Doctor, Hospital, Appointment, Prescription, Conversation, Message, MedicalHistory, Medicine, Cart, CartItem, Order, OrderItem, PaymentMethod, FAQ, UserQuestion, AmbulanceRequest, PrivacySettings, AccountSecurity, SupportTicket, SupportReply, VitalSign, LabResult, SymptomEntry, DnaTest, PatientMedicationRecord
 from .serializers import (
     UserSerializer, UserProfileSerializer,
     PatientSerializer, DoctorSerializer,
@@ -14,7 +14,8 @@ from .serializers import (
     ConversationSerializer, MessageSerializer,
     MedicalHistorySerializer, SlotSerializer, MedicineSerializer, CartSerializer, CartItemSerializer, OrderSerializer, PaymentMethodSerializer,
     FAQSerializer, UserQuestionSerializer, CreateUserQuestionSerializer, AmbulanceRequestSerializer, CreateAmbulanceRequestSerializer,
-    PrivacySettingsSerializer, ChangePasswordSerializer, AccountSecuritySerializer, SupportTicketSerializer, SupportReplySerializer
+    PrivacySettingsSerializer, ChangePasswordSerializer, AccountSecuritySerializer, SupportTicketSerializer, SupportReplySerializer,
+    VitalSignSerializer, LabResultSerializer, SymptomEntrySerializer, DnaTestSerializer, PatientMedicationRecordSerializer
 )
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
@@ -686,6 +687,24 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         slot.save(update_fields=['is_available'])
         return Response(self.get_serializer(appt).data, status=201)
 
+    @action(detail=True, methods=['post'])
+    def pay(self, request, pk=None):
+        """Mark an appointment as paid (demo payment)."""
+        appt = self.get_object()
+        amount = request.data.get('amount')
+        reference = request.data.get('reference', '')
+        try:
+            amt = float(amount) if amount is not None else 0
+        except Exception:
+            return Response({'error': 'Invalid amount'}, status=status.HTTP_400_BAD_REQUEST)
+
+        appt.payment_amount = amt
+        appt.payment_reference = reference
+        appt.payment_status = Appointment.PaymentStatus.PAID
+        appt.paid_at = timezone.now()
+        appt.save(update_fields=['payment_amount', 'payment_reference', 'payment_status', 'paid_at'])
+        return Response(self.get_serializer(appt).data)
+
     @action(detail=False, methods=['post'])
     def request(self, request):
         """Patient requests an appointment selecting doctor and date_time, with optional symptoms."""
@@ -969,6 +988,75 @@ class MyMedicalHistoryViewSet(viewsets.ReadOnlyModelViewSet):
             return qs
         return MedicalHistory.objects.none()
 
+
+class MyVitalsViewSet(viewsets.ModelViewSet):
+    serializer_class = VitalSignSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'patient'):
+            return VitalSign.objects.filter(patient=user.patient)
+        return VitalSign.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(patient=self.request.user.patient)
+
+
+class MyLabResultsViewSet(viewsets.ModelViewSet):
+    serializer_class = LabResultSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'patient'):
+            return LabResult.objects.filter(patient=user.patient)
+        return LabResult.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(patient=self.request.user.patient)
+
+
+class MySymptomsViewSet(viewsets.ModelViewSet):
+    serializer_class = SymptomEntrySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'patient'):
+            return SymptomEntry.objects.filter(patient=user.patient)
+        return SymptomEntry.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(patient=self.request.user.patient)
+
+
+class MyDnaTestsViewSet(viewsets.ModelViewSet):
+    serializer_class = DnaTestSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'patient'):
+            return DnaTest.objects.filter(patient=user.patient)
+        return DnaTest.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(patient=self.request.user.patient)
+
+
+class MyMedicationsViewSet(viewsets.ModelViewSet):
+    serializer_class = PatientMedicationRecordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'patient'):
+            return PatientMedicationRecord.objects.filter(patient=user.patient)
+        return PatientMedicationRecord.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(patient=self.request.user.patient)
 
 # --------------------------
 # Auth & Messaging
