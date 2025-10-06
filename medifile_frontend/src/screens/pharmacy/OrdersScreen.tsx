@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { getMyOrders, cancelOrder, Order } from '../../api/pharmacy';
+import { getMyOrders, cancelOrder, Order, addToCart } from '../../api/pharmacy';
 import { useAuth } from '../../context/AuthContext';
 
 interface OrdersScreenProps {
@@ -115,6 +115,20 @@ const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
     }
   };
 
+  const handleReorder = async (order: Order) => {
+    try {
+      for (const item of order.items) {
+        await addToCart(item.medicine.medicine_id, item.quantity);
+      }
+      Alert.alert('Added to cart', 'Items from this order were added to your cart.', [
+        { text: 'View Cart', onPress: () => navigation.navigate('Cart') },
+        { text: 'OK' },
+      ]);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to add items to cart.');
+    }
+  };
+
   const renderOrderItem = (order: Order) => (
     <TouchableOpacity
       key={order.order_id}
@@ -178,6 +192,16 @@ const OrdersScreen = ({ navigation }: OrdersScreenProps) => {
           >
             <Ionicons name="close-outline" size={16} color="#e74c3c" />
             <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        )}
+
+        {order.status.toLowerCase() === 'delivered' && (
+          <TouchableOpacity
+            style={styles.viewButton}
+            onPress={() => handleReorder(order)}
+          >
+            <Ionicons name="bag-add-outline" size={16} color="#199A8E" />
+            <Text style={styles.viewButtonText}>Reorder</Text>
           </TouchableOpacity>
         )}
       </View>

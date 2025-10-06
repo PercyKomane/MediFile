@@ -1016,6 +1016,27 @@ class MyLabResultsViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(patient=self.request.user.patient)
 
+    # Patients should not modify lab results once recorded; enforce read-only for mutations
+    def create(self, request, *args, **kwargs):
+        if hasattr(request.user, 'patient'):
+            raise ValidationError('Patients cannot create lab results')
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        if hasattr(request.user, 'patient'):
+            raise ValidationError('Patients cannot update lab results')
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        if hasattr(request.user, 'patient'):
+            raise ValidationError('Patients cannot update lab results')
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        if hasattr(request.user, 'patient'):
+            raise ValidationError('Patients cannot delete lab results')
+        return super().destroy(request, *args, **kwargs)
+
 
 class MySymptomsViewSet(viewsets.ModelViewSet):
     serializer_class = SymptomEntrySerializer

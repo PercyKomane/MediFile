@@ -335,30 +335,35 @@ class VitalSignSerializer(serializers.ModelSerializer):
     class Meta:
         model = VitalSign
         fields = '__all__'
+        read_only_fields = ['patient']
 
 
 class LabResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = LabResult
         fields = '__all__'
+        read_only_fields = ['patient']
 
 
 class SymptomEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = SymptomEntry
         fields = '__all__'
+        read_only_fields = ['patient']
 
 
 class DnaTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = DnaTest
         fields = '__all__'
+        read_only_fields = ['patient']
 
 
 class PatientMedicationRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientMedicationRecord
         fields = '__all__'
+        read_only_fields = ['patient']
 
 
 # --------------------------

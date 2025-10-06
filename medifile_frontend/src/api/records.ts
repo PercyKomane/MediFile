@@ -32,6 +32,15 @@ export const addLabResult = async (payload: any) => {
   return data as any;
 };
 
+export const updateLabResult = async (id: number | string, payload: any) => {
+  const { data } = await API.patch(`/me/lab-results/${id}/`, payload);
+  return data as any;
+};
+
+export const deleteLabResult = async (id: number | string) => {
+  await API.delete(`/me/lab-results/${id}/`);
+};
+
 // Symptoms
 export const listSymptoms = async () => {
   const { data } = await API.get('/me/symptoms/');
@@ -41,6 +50,15 @@ export const listSymptoms = async () => {
 export const addSymptom = async (payload: any) => {
   const { data } = await API.post('/me/symptoms/', payload);
   return data as any;
+};
+
+export const updateSymptom = async (id: number | string, payload: any) => {
+  const { data } = await API.patch(`/me/symptoms/${id}/`, payload);
+  return data as any;
+};
+
+export const deleteSymptom = async (id: number | string) => {
+  await API.delete(`/me/symptoms/${id}/`);
 };
 
 // DNA tests
@@ -63,6 +81,15 @@ export const listPatientMedications = async () => {
 export const addPatientMedication = async (payload: any) => {
   const { data } = await API.post('/me/medications/', payload);
   return data as any;
+};
+
+export const updatePatientMedication = async (id: number | string, payload: any) => {
+  const { data } = await API.patch(`/me/medications/${id}/`, payload);
+  return data as any;
+};
+
+export const deletePatientMedication = async (id: number | string) => {
+  await API.delete(`/me/medications/${id}/`);
 };
 
 

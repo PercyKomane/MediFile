@@ -68,6 +68,11 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
   const subtotal = items.reduce((sum, item) => {
     return sum + (parseFloat(item.medicine.price) * item.quantity);
   }, 0);
+  const savings = items.reduce((sum, item) => {
+    const orig = item.medicine.original_price ? parseFloat(item.medicine.original_price) : parseFloat(item.medicine.price);
+    const cur = parseFloat(item.medicine.price);
+    return sum + Math.max(0, (orig - cur) * item.quantity);
+  }, 0);
   
   const deliveryFee = deliveryOption === 'express' ? 100 : 50;
   const tax = subtotal * 0.15;
@@ -198,6 +203,11 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
         {/* Shipping Details */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Shipping Details</Text>
+
+          {/* Saved Address (stub) */}
+          <TouchableOpacity style={{ alignSelf: 'flex-start', marginBottom: 10 }} onPress={() => setShippingDetails(prev => ({ ...prev, fullName: shippingDetails.fullName || 'Zoey Doe', phone: shippingDetails.phone || '0712345678', address: shippingDetails.address || '123 Health St, Wellness Park', city: shippingDetails.city || 'Johannesburg', postalCode: shippingDetails.postalCode || '2000', province: shippingDetails.province || 'Gauteng' }))}>
+            <Text style={{ color: '#199A8E', fontWeight: '600' }}>Use saved address</Text>
+          </TouchableOpacity>
           
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Full Name *</Text>
@@ -299,6 +309,18 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
             </View>
             <Text style={styles.deliveryPrice}>R 100.00</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Preferred Delivery Window */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Preferred Delivery Window</Text>
+          <View style={{ flexDirection: 'row' }}>
+            {['09:00 - 12:00', '12:00 - 15:00', '15:00 - 18:00'].map((window) => (
+              <TouchableOpacity key={window} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: '#ddd', marginRight: 8 }}>
+                <Text style={{ color: '#333' }}>{window}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Payment Method */}
@@ -434,6 +456,12 @@ const CheckoutScreen: React.FC<CheckoutScreenProps> = ({ navigation, route }) =>
             <Text style={styles.totalLabel}>Subtotal:</Text>
             <Text style={styles.totalValue}>R {subtotal.toFixed(2)}</Text>
           </View>
+          {savings > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, { color: '#199A8E' }]}>You save:</Text>
+              <Text style={[styles.totalValue, { color: '#199A8E' }]}>- R {savings.toFixed(2)}</Text>
+            </View>
+          )}
           
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Delivery Fee:</Text>

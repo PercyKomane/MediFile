@@ -40,6 +40,8 @@ const LineChartMock = ({
   points,
   unit,
   yHint,
+  yMin,
+  yMax,
   normalLabel,
   normalMin,
   normalMax,
@@ -49,6 +51,8 @@ const LineChartMock = ({
   points: number[];
   unit: string;
   yHint: string;
+  yMin: number;
+  yMax: number;
   normalLabel?: string;
   normalMin?: number;
   normalMax?: number;
@@ -66,6 +70,17 @@ const LineChartMock = ({
     });
   }, [coords, graphSize]);
   const curvePoints = useMemo(() => computeCatmullRomPath(pixelCoords, 20), [pixelCoords]);
+  const yTicks = useMemo(() => {
+    const steps = 4;
+    const arr: { pos: number; label: string }[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const value = yMin + (yMax - yMin) * t;
+      const label = unit === '°C' ? value.toFixed(1) : Math.round(value).toString();
+      arr.push({ pos: t * 100, label });
+    }
+    return arr;
+  }, [yMin, yMax, unit]);
   return (
     <View style={styles.chartBox}>
       <View style={styles.chartHeader}>
@@ -73,6 +88,19 @@ const LineChartMock = ({
         <Text style={styles.chartHint}>{yHint}</Text>
       </View>
       <View style={[styles.graphArea, chartHeight ? { height: chartHeight } : null]} onLayout={e => setGraphSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}>
+        {/* Axes */}
+        <View style={styles.axisY} />
+        <View style={styles.axisX} />
+        {/* Y ticks and labels */}
+        {yTicks.map((t, idx) => (
+          <React.Fragment key={`yt-${idx}`}>
+            <View style={[styles.yTick, { top: `${100 - t.pos}%` }]} />
+            <Text style={[styles.yTickLabel, { top: `${100 - t.pos}%` }]}>{t.label}</Text>
+          </React.Fragment>
+        ))}
+        {/* X labels */}
+        <Text style={[styles.xTickLabel, { left: '10%' }]}>Old</Text>
+        <Text style={[styles.xTickLabel, { right: '5%' }]}>New</Text>
         {normalMin !== undefined && normalMax !== undefined && (
           <View style={[styles.normalBand, { top: `${100 - normalMax}%`, height: `${normalMax - normalMin}%` }]} />
         )}
@@ -142,7 +170,7 @@ export default function ChartsScreen() {
   const [windowSize, setWindowSize] = useState<5 | 10 | 20>(10);
   useEffect(() => { (async () => { try { setVitals(await listVitals()); } catch {} })(); }, []);
   const windowH = Dimensions.get('window').height;
-  const chartHeight = Math.max(320, Math.floor(windowH * 0.50));
+  const chartHeight = Math.max(280, Math.floor(windowH * 0.42));
   const insets = useSafeAreaInsets();
   const recent = useMemo(() => vitals.slice(0, windowSize).reverse(), [vitals, windowSize]);
   const normalize = (value: number, min: number, max: number) => ((value - min) / (max - min)) * 100;
@@ -169,10 +197,21 @@ export default function ChartsScreen() {
     const arr = (hr.length ? hr : [72, 75, 73, 70, 74]).map((x: number) => normalize(x, domain.min, domain.max));
     return { arr, domain };
   }, [recent]);
-  const lastVital = vitals[0];
-  const latestTemp = lastVital?.temperature_c ? Number(lastVital.temperature_c).toFixed(1) : '--';
-  const latestBP = lastVital?.systolic_bp && lastVital?.diastolic_bp ? `${lastVital.systolic_bp}/${lastVital.diastolic_bp}` : '--';
-  const latestHR = lastVital?.heart_rate_bpm ?? '--';
+  // Top summaries reflect the current window (avg of last N)
+  const avg = (arr: number[]) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : NaN);
+  const windowTemps = recent
+    .map(v => parseFloat(String(v.temperature_c)))
+    .filter(v => !isNaN(v));
+  const avgTempVal = avg(windowTemps);
+  const windowSys = recent.map(v => v.systolic_bp).filter((n: any) => typeof n === 'number');
+  const windowDia = recent.map(v => v.diastolic_bp).filter((n: any) => typeof n === 'number');
+  const avgSys = avg(windowSys as number[]);
+  const avgDia = avg(windowDia as number[]);
+  const windowHR = recent.map(v => v.heart_rate_bpm).filter((n: any) => typeof n === 'number');
+  const avgHRVal = avg(windowHR as number[]);
+  const latestTemp = isNaN(avgTempVal) ? '--' : avgTempVal.toFixed(1);
+  const latestBP = isNaN(avgSys) || isNaN(avgDia) ? '--' : `${Math.round(avgSys)}/${Math.round(avgDia)}`;
+  const latestHR = isNaN(avgHRVal) ? '--' : Math.round(avgHRVal);
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
@@ -210,6 +249,8 @@ export default function ChartsScreen() {
             points={tempSeries.arr}
             unit="°C"
             yHint={`${tempSeries.domain.min} — ${tempSeries.domain.max} °C`}
+            yMin={tempSeries.domain.min}
+            yMax={tempSeries.domain.max}
             normalLabel="Normal range (36.1–37.2 °C)"
             normalMin={((36.1 - tempSeries.domain.min) / (tempSeries.domain.max - tempSeries.domain.min)) * 100}
             normalMax={((37.2 - tempSeries.domain.min) / (tempSeries.domain.max - tempSeries.domain.min)) * 100}
@@ -224,6 +265,22 @@ export default function ChartsScreen() {
             <Text style={styles.chartHint}>{`${bpSeries.domain.min} — ${bpSeries.domain.max} mmHg`}</Text>
           </View>
           <View style={[styles.graphArea, { height: chartHeight }]}>
+            {/* Axes */}
+            <View style={styles.axisY} />
+            <View style={styles.axisX} />
+            {/* Y ticks for BP */}
+            {([0, 25, 50, 75, 100] as const).map((p, i) => {
+              const val = Math.round(bpSeries.domain.min + (bpSeries.domain.max - bpSeries.domain.min) * (p / 100));
+              return (
+                <React.Fragment key={`bpt-${i}`}>
+                  <View style={[styles.yTick, { top: `${100 - p}%` }]} />
+                  <Text style={[styles.yTickLabel, { top: `${100 - p}%` }]}>{val}</Text>
+                </React.Fragment>
+              );
+            })}
+            {/* X labels */}
+            <Text style={[styles.xTickLabel, { left: '10%' }]}>Old</Text>
+            <Text style={[styles.xTickLabel, { right: '5%' }]}>New</Text>
             {/* Normal bands */}
             <View style={[styles.normalBand, { top: `${100 - ((120 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100}%`, height: `${(((120 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100) - (((90 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100)}%`, backgroundColor: '#90CAF9', opacity: 0.25 }]} />
             <View style={[styles.normalBand, { top: `${100 - ((80 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100}%`, height: `${(((80 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100) - (((60 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100)}%`, backgroundColor: '#F8BBD0', opacity: 0.25 }]} />
@@ -254,6 +311,8 @@ export default function ChartsScreen() {
             points={hrSeries.arr}
             unit="bpm"
             yHint={`${hrSeries.domain.min} — ${hrSeries.domain.max} bpm`}
+            yMin={hrSeries.domain.min}
+            yMax={hrSeries.domain.max}
             normalLabel="Typical resting (60–100 bpm)"
             normalMin={((60 - hrSeries.domain.min) / (hrSeries.domain.max - hrSeries.domain.min)) * 100}
             normalMax={((100 - hrSeries.domain.min) / (hrSeries.domain.max - hrSeries.domain.min)) * 100}
@@ -279,13 +338,18 @@ const styles = StyleSheet.create({
   chartHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   chartTitle: { fontWeight: '700', color: '#334B48' },
   chartHint: { color: '#7B8F8C', fontSize: 12 },
-  graphArea: { height: 140, borderRadius: 8, backgroundColor: '#E5F4F2', overflow: 'hidden', position: 'relative' },
-  dot: { position: 'absolute', width: 8, height: 8, borderRadius: 4, backgroundColor: '#E53935' },
+  graphArea: { height: 120, borderRadius: 8, backgroundColor: '#E5F4F2', overflow: 'hidden', position: 'relative' },
+  dot: { position: 'absolute', width: 6, height: 6, borderRadius: 3, backgroundColor: '#E53935' },
   line: { position: 'absolute', left: 0, right: 0, top: '50%', height: 2, backgroundColor: '#0F8A83', opacity: 0.4 },
   normalBand: { position: 'absolute', left: 0, right: 0, backgroundColor: '#C8E6C9', opacity: 0.5 },
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   legendSwatch: { width: 12, height: 12, borderRadius: 2 },
   legendText: { color: '#334B48', fontSize: 12 },
+  axisY: { position: 'absolute', left: '8%', top: 0, bottom: 0, width: 1, backgroundColor: '#B3CBC7' },
+  axisX: { position: 'absolute', left: 0, right: 0, bottom: '6%', height: 1, backgroundColor: '#B3CBC7' },
+  yTick: { position: 'absolute', left: '8%', width: 6, height: 1, backgroundColor: '#8FB9B3', marginLeft: -3 },
+  yTickLabel: { position: 'absolute', left: 0, marginLeft: 4, color: '#5C7A76', fontSize: 10 },
+  xTickLabel: { position: 'absolute', bottom: 0, marginBottom: 2, color: '#5C7A76', fontSize: 10 },
   summaryRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   summaryCard: { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 12 },
   summaryLabel: { color: '#7B8F8C', fontSize: 12, marginBottom: 4 },

@@ -9,6 +9,7 @@ import {
   Alert,
   StatusBar,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +23,9 @@ interface CartScreenProps {
 const CartScreen = ({ navigation }: CartScreenProps) => {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState(true);
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+  const [deliveryOption, setDeliveryOption] = useState<'standard' | 'express'>('standard');
   const [refreshing, setRefreshing] = useState(false);
   const { token } = useAuth();
 
@@ -108,6 +112,24 @@ const CartScreen = ({ navigation }: CartScreenProps) => {
         },
       ]
     );
+  };
+
+  const subtotalNumber = cart ? parseFloat(cart.total_amount) : 0;
+  const deliveryFee = deliveryOption === 'express' ? 100 : 50;
+  const tax = subtotalNumber * 0.15;
+  const promoDiscount = appliedPromo === 'SAVE10' ? subtotalNumber * 0.1 : 0;
+  const totalDue = subtotalNumber - promoDiscount + deliveryFee + tax;
+
+  const applyPromo = () => {
+    const code = promoCode.trim().toUpperCase();
+    if (!code) return;
+    if (code === 'SAVE10') {
+      setAppliedPromo('SAVE10');
+      Alert.alert('Promo applied', '10% discount has been applied');
+    } else {
+      setAppliedPromo(null);
+      Alert.alert('Invalid code', 'This promo code is not valid');
+    }
   };
 
   const handleCheckout = () => {
@@ -265,27 +287,63 @@ const CartScreen = ({ navigation }: CartScreenProps) => {
         {/* Order Summary */}
         <View style={styles.summaryContainer}>
           <Text style={styles.summaryTitle}>Order Summary</Text>
-          
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal:</Text>
-            <Text style={styles.summaryValue}>R {cart.total_amount}</Text>
+          {/* Promo code */}
+          <View style={{ marginBottom: 12 }}>
+            <Text style={styles.summaryLabel}>Promo code</Text>
+            <View style={{ flexDirection: 'row', marginTop: 6 }}>
+              <TextInput
+                style={{ flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 }}
+                placeholder="Enter code (e.g., SAVE10)"
+                value={promoCode}
+                onChangeText={setPromoCode}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity onPress={applyPromo} style={{ marginLeft: 10, backgroundColor: '#199A8E', borderRadius: 8, paddingHorizontal: 16, justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{appliedPromo ? 'Update' : 'Apply'}</Text>
+              </TouchableOpacity>
+            </View>
+            {appliedPromo && (
+              <Text style={{ color: '#199A8E', marginTop: 6, fontWeight: '600' }}>Code applied: {appliedPromo}</Text>
+            )}
           </View>
           
           <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Subtotal:</Text>
+            <Text style={styles.summaryValue}>R {subtotalNumber.toFixed(2)}</Text>
+          </View>
+          {promoDiscount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: '#199A8E' }]}>Promo discount:</Text>
+              <Text style={[styles.summaryValue, { color: '#199A8E' }]}>- R {promoDiscount.toFixed(2)}</Text>
+            </View>
+          )}
+          
+          <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Delivery Fee:</Text>
-            <Text style={styles.summaryValue}>R 50.00</Text>
+            <Text style={styles.summaryValue}>R {deliveryFee.toFixed(2)}</Text>
           </View>
           
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax:</Text>
-            <Text style={styles.summaryValue}>R {(parseFloat(cart.total_amount) * 0.15).toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>R {tax.toFixed(2)}</Text>
           </View>
           
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalValue}>
-              R {(parseFloat(cart.total_amount) + 50 + (parseFloat(cart.total_amount) * 0.15)).toFixed(2)}
-            </Text>
+            <Text style={styles.totalValue}>R {totalDue.toFixed(2)}</Text>
+          </View>
+
+          {/* Delivery option */}
+          <View style={{ marginTop: 8 }}>
+            <Text style={styles.summaryLabel}>Delivery</Text>
+            <View style={{ flexDirection: 'row', marginTop: 8 }}>
+              <TouchableOpacity onPress={() => setDeliveryOption('standard')} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: deliveryOption==='standard'?'#199A8E':'#ddd', backgroundColor: deliveryOption==='standard'?'#F0F9F8':'#fff', marginRight: 8 }}>
+                <Text style={{ color: deliveryOption==='standard'?'#199A8E':'#333' }}>Standard (R 50)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setDeliveryOption('express')} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: deliveryOption==='express'?'#199A8E':'#ddd', backgroundColor: deliveryOption==='express'?'#F0F9F8':'#fff' }}>
+                <Text style={{ color: deliveryOption==='express'?'#199A8E':'#333' }}>Express (R 100)</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -294,9 +352,7 @@ const CartScreen = ({ navigation }: CartScreenProps) => {
       <View style={styles.checkoutContainer}>
         <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
           <Ionicons name="card-outline" size={20} color="#fff" />
-          <Text style={styles.checkoutButtonText}>
-            Proceed to Checkout - R {(parseFloat(cart.total_amount) + 50 + (parseFloat(cart.total_amount) * 0.15)).toFixed(2)}
-          </Text>
+          <Text style={styles.checkoutButtonText}>Proceed to Checkout - R {totalDue.toFixed(2)}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

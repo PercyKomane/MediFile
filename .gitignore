@@ -4,6 +4,8 @@ node_modules/
 .expo-shared/
 dist/
 web-build/
+metro-cache/
+*.cache/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -13,6 +15,9 @@ yarn-error.log*
 # React Native
 ios/
 android/
+*.apk
+*.aab
+*.ipa
 
 # TypeScript
 *.tsbuildinfo
@@ -26,15 +31,24 @@ __pycache__/
 *.py[cod]
 *.sqlite3
 /db.sqlite3
-/media/
+# ignore any media directory anywhere
+media/
+backend/medifile_backend/media/
 *.pot
 *.pyc
+.env.local
 
 # Environments
 .env
 .venv/
 venv/
 ENV/
+
+# Project logs
+frontend_dev.log
+frontend_web.log
+backend_dev.log
+backend_server.log
 
 # Coverage/pytest
 .coverage

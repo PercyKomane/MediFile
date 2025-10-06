@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Medicine, addToCart, getMyCart } from '../../api/pharmacy';
 import { useAuth } from '../../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface MedicineDetailScreenProps {
   navigation: any;
@@ -48,6 +49,23 @@ const MedicineDetailScreen: React.FC<MedicineDetailScreenProps> = ({ navigation,
       loadCartCount();
     }
   }, [token]);
+
+  useEffect(() => {
+    // Track recently viewed medicines (persist up to 10 ids)
+    const storeRecentlyViewed = async () => {
+      try {
+        const key = 'recent_medicine_ids';
+        const existing = await AsyncStorage.getItem(key);
+        const ids: number[] = existing ? JSON.parse(existing) : [];
+        const withoutCurrent = ids.filter((id) => id !== medicine.medicine_id);
+        const updated = [medicine.medicine_id, ...withoutCurrent].slice(0, 10);
+        await AsyncStorage.setItem(key, JSON.stringify(updated));
+      } catch (e) {
+        // noop
+      }
+    };
+    storeRecentlyViewed();
+  }, [medicine.medicine_id]);
 
   const handleAddToCart = async () => {
     if (!token) {
@@ -92,6 +110,20 @@ const MedicineDetailScreen: React.FC<MedicineDetailScreenProps> = ({ navigation,
     navigation.navigate('Checkout', {
       items: [{ medicine, quantity }],
       isDirectPurchase: true,
+    });
+  };
+
+  const handleCheckInteractions = () => {
+    Alert.alert(
+      'Drug Interactions',
+      'Personalized interaction checks will be available soon. Always consult your doctor or pharmacist.'
+    );
+  };
+
+  const handleSeeAlternatives = () => {
+    navigation.navigate('Pharmacy', {
+      preselectedCategory: medicine.category,
+      prefillSearch: '',
     });
   };
 
@@ -210,6 +242,18 @@ const MedicineDetailScreen: React.FC<MedicineDetailScreenProps> = ({ navigation,
                 {medicine.is_prescription_required ? 'Yes' : 'No'}
               </Text>
             </View>
+          </View>
+
+          {/* Safety & Alternatives */}
+          <View style={styles.safetyContainer}>
+            <TouchableOpacity style={styles.safetyButton} onPress={handleCheckInteractions}>
+              <Ionicons name="alert-circle-outline" size={18} color="#E67E22" />
+              <Text style={styles.safetyButtonText}>Check interactions with my meds</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.altButton} onPress={handleSeeAlternatives}>
+              <Ionicons name="swap-horizontal-outline" size={18} color="#199A8E" />
+              <Text style={styles.altButtonText}>See alternatives in {medicine.category}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Quantity Selector */}
@@ -511,6 +555,38 @@ const styles = StyleSheet.create({
      fontSize: 12,
      fontWeight: 'bold',
    },
+  safetyContainer: {
+    marginBottom: 20,
+    gap: 10,
+  },
+  safetyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFF7ED',
+    borderRadius: 8,
+  },
+  safetyButtonText: {
+    marginLeft: 8,
+    color: '#A65D1B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  altButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#F0F9F8',
+    borderRadius: 8,
+  },
+  altButtonText: {
+    marginLeft: 8,
+    color: '#199A8E',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
 
 export default MedicineDetailScreen;

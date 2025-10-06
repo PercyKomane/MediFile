@@ -87,7 +87,7 @@ const ProfileScreen = ({ navigation }: any) => {
           source={require('../assets/images/avatars/profile_avatar.png')}
           style={styles.avatar}
         />
-        <Text style={styles.name}>Amelia Renata</Text>
+        <Text style={styles.name}>Zoey Doe</Text>
       </View>
 
       {/* White Card Options */}
