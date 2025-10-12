@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
+    # 'channels',  # Temporarily disabled until properly installed
 ]
 
 MIDDLEWARE = [

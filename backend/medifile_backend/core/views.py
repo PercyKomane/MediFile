@@ -1150,31 +1150,32 @@ class MessageViewSet(viewsets.ModelViewSet):
             raise ValidationError("Not a participant")
         serializer.save(sender=user)
 
-        # Broadcast message to WebSocket group for this conversation
-        try:
-            from asgiref.sync import async_to_sync
-            from channels.layers import get_channel_layer
+        # # Broadcast message to WebSocket group for this conversation
+        # # Temporarily disabled until Channels is properly installed
+        # try:
+        #     from asgiref.sync import async_to_sync
+        #     from channels.layers import get_channel_layer
 
-            layer = get_channel_layer()
-            if layer is not None:
-                async_to_sync(layer.group_send)(
-                    f"conversation_{conv.pk}",
-                    {
-                        "type": "chat.message",
-                        "payload": {
-                            "type": "new_message",
-                            "message": {
-                                "id": serializer.data.get("message_id"),
-                                "text": serializer.data.get("text"),
-                                "sender": serializer.data.get("sender"),
-                                "created_at": serializer.data.get("created_at"),
-                            },
-                        },
-                    },
-                )
-        except Exception:
-            # Fail silently for broadcasting to avoid breaking API
-            pass
+        #     layer = get_channel_layer()
+        #     if layer is not None:
+        #         async_to_sync(layer.group_send)(
+        #             f"conversation_{conv.pk}",
+        #             {
+        #                 "type": "chat.message",
+        #                 "payload": {
+        #                     "type": "new_message",
+        #                     "message": {
+        #                         "id": serializer.data.get("message_id"),
+        #                         "text": serializer.data.get("text"),
+        #                         "sender": serializer.data.get("sender"),
+        #                         "created_at": serializer.data.get("created_at"),
+        #                     },
+        #                 },
+        #             },
+        #         )
+        # except Exception:
+        #     # Fail silently for broadcasting to avoid breaking API
+        #     pass
 
 
 @api_view(['GET'])
