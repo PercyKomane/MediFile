@@ -17,6 +17,8 @@ import { DOCTORS } from '../data/doctors';
 import { MessagesStackParamList } from '../navigation/MessagesNavigator';
 import * as MessagesAPI from '../api/messages';
 import { getDoctor } from '../api/doctors';
+import { useAuth } from '../context/AuthContext';
+import { useChatSocket } from '../hooks/useChatSocket';
 
 type Sender = 'doctor' | 'user' | 'system' | 'typing';
 
@@ -31,6 +33,7 @@ type ChatMessage = {
 const AVATAR_FALLBACK = require('../assets/images/doctors/doctor1.png');
 
 const MessagesScreen = () => {
+  const { token } = useAuth();
   const [text, setText] = useState('');
   const navigation = useNavigation();
   const route = useRoute<RouteProp<MessagesStackParamList, 'Chat'>>();
@@ -88,6 +91,34 @@ const MessagesScreen = () => {
     return () => { mounted = false; };
   }, [conversationId, doctorUserId]);
 
+  // Live socket events: append new messages, show typing indicator
+  const typingIdRef = useRef<string | null>(null);
+  const { sendTyping } = useChatSocket(conversationId, token, (payload) => {
+    if (payload?.type === 'new_message') {
+      const m = payload.message;
+      const newMsg: ChatMessage = {
+        id: String(m.id),
+        text: m.text,
+        sender: m.sender === doctorUserId ? 'doctor' : 'user',
+        time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: new Date(m.created_at).getTime(),
+      };
+      setMessages((prev) => [...prev, newMsg]);
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+    } else if (payload?.type === 'typing') {
+      // Add ephemeral typing bubble for doctor
+      const tempId = 'typing';
+      if (!typingIdRef.current) {
+        typingIdRef.current = tempId;
+        setMessages((prev) => [...prev, { id: tempId, sender: 'typing' } as any]);
+        setTimeout(() => {
+          typingIdRef.current = null;
+          setMessages((prev) => prev.filter((m) => m.id !== tempId));
+        }, 1500);
+      }
+    }
+  });
+
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const handleSend = async () => {
@@ -109,6 +140,12 @@ const MessagesScreen = () => {
     } catch {
       // optionally surface error
     }
+  };
+
+  // Optional: emit typing when user types (throttled by UI simplicity)
+  const handleChangeText = (t: string) => {
+    setText(t);
+    try { sendTyping(); } catch {}
   };
 
   const formatRelative = (ts?: number) => {
@@ -221,7 +258,7 @@ const MessagesScreen = () => {
             placeholder="Type message ..."
             placeholderTextColor="#9AA0A6"
             value={text}
-            onChangeText={setText}
+            onChangeText={handleChangeText}
           />
           <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
             <Text style={styles.sendLabel}>Send</Text>
