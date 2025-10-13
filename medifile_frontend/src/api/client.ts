@@ -37,6 +37,27 @@ const logError = (error: any) => {
 // IMPORTANT: This must point to your Django server, not the Metro bundler (8081).
 // If your Django runs on a different host/port, update accordingly.
 function resolveApiBaseUrl(): string {
+  // 1) Highest priority: explicit env override (Expo public env var)
+  //    Set EXPO_PUBLIC_API_BASE_URL to your Render URL, e.g. https://<service>.onrender.com/api
+  const envUrl = (process as any)?.env?.EXPO_PUBLIC_API_BASE_URL as string | undefined;
+  if (envUrl && typeof envUrl === 'string' && envUrl.startsWith('http')) {
+    console.log('🔍 Debug - Using EXPO_PUBLIC_API_BASE_URL:', envUrl);
+    return envUrl;
+  }
+
+  // 2) Next: app config extra (supports app.config.ts/js with { extra: { apiBaseUrl } })
+  try {
+    const anyConstants = Constants as any;
+    const extraUrl: string | undefined =
+      anyConstants?.expoConfig?.extra?.apiBaseUrl ||
+      anyConstants?.manifest2?.extra?.apiBaseUrl ||
+      anyConstants?.manifest?.extra?.apiBaseUrl;
+    if (extraUrl && typeof extraUrl === 'string' && extraUrl.startsWith('http')) {
+      console.log('🔍 Debug - Using extra.apiBaseUrl:', extraUrl);
+      return extraUrl;
+    }
+  } catch {}
+
   try {
     const anyConstants = Constants as any;
     const hostUri: string | undefined = anyConstants?.expoGoConfig?.hostUri || anyConstants?.manifest?.debuggerHost || anyConstants?.manifest2?.extra?.expoClient?.hostUri;
@@ -54,6 +75,7 @@ function resolveApiBaseUrl(): string {
   } catch (error) {
     console.log('🔍 Debug - Error resolving URL:', error);
   }
+  // 3) Final fallback: localhost (dev only)
   const fallbackUrl = 'http://localhost:8000/api';
   console.log('🔍 Debug - Using fallback URL:', fallbackUrl);
   return fallbackUrl;
