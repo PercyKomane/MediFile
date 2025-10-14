@@ -3,6 +3,9 @@
     "owner": "wrldofxan",
     "name": "MediFile",
     "slug": "medifile",
+    "extra": {
+      "eas": { "projectId": "6629476a-03ea-47a3-b855-532f2af3ef3b" }
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/icons/MediFileLogo.png",
@@ -25,6 +28,11 @@
     },
     "web": {
       "favicon": "./src/assets/images/icons/MediFileLogo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "@wrldofxan/medifile"
+      }
     }
   }
 }
