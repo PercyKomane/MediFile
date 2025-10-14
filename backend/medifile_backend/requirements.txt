@@ -6,6 +6,6 @@ Pillow==10.4.0
 channels==4.1.0
 channels-redis==4.2.0
 daphne==4.1.2
-psycopg2-binary==2.9.9
+psycopg[binary]==3.2.1
 gunicorn==21.2.0
 whitenoise==6.7.0
