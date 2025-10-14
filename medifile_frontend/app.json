@@ -3,6 +3,7 @@
     "owner": "wrldofxan",
     "name": "MediFile",
     "slug": "medifile",
+    "projectId": "6629476a-03ea-47a3-b855-532f2af3ef3b",
     "extra": {
       "eas": { "projectId": "6629476a-03ea-47a3-b855-532f2af3ef3b" }
     },
