@@ -10,6 +10,9 @@ export DJANGO_SETTINGS_MODULE=medifile_backend.settings
 echo "[Render] Running migrations..."
 python manage.py migrate --noinput
 
+echo "[Render] Collecting static files..."
+python manage.py collectstatic --noinput
+
 echo "[Render] Starting Gunicorn..."
 exec gunicorn medifile_backend.wsgi:application \
   --bind 0.0.0.0:${PORT:-8000} \

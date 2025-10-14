@@ -44,12 +44,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
-    # 'channels',  # Temporarily disabled until properly installed
+    # 'channels',
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware', # this must be above NB: dont forget
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -101,12 +102,31 @@ ASGI_APPLICATION = 'medifile_backend.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+PG_NAME = os.environ.get('PGDATABASE') or os.environ.get('POSTGRES_DB')
+PG_USER = os.environ.get('PGUSER') or os.environ.get('POSTGRES_USER')
+PG_PASSWORD = os.environ.get('PGPASSWORD') or os.environ.get('POSTGRES_PASSWORD')
+PG_HOST = os.environ.get('PGHOST') or os.environ.get('POSTGRES_HOST') or '127.0.0.1'
+PG_PORT = os.environ.get('PGPORT') or os.environ.get('POSTGRES_PORT') or '5432'
+
+if PG_NAME and PG_USER and PG_PASSWORD:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': PG_NAME,
+            'USER': PG_USER,
+            'PASSWORD': PG_PASSWORD,
+            'HOST': PG_HOST,
+            'PORT': PG_PORT,
+        }
     }
-}
+else:
+    # Fallback to SQLite if PostgreSQL env vars are not provided
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -143,9 +163,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Use WhiteNoise to serve static files in production (admin CSS/JS)
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
