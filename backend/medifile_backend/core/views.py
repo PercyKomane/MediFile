@@ -19,7 +19,7 @@ from .serializers import (
 )
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 class AmbulanceRequestViewSet(viewsets.ModelViewSet):
     queryset = AmbulanceRequest.objects.all()
     permission_classes = [IsAuthenticated]
@@ -850,6 +850,7 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
 class MyProfileViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def list(self, request):
         user = request.user
@@ -871,6 +872,21 @@ class MyProfileViewSet(viewsets.GenericViewSet):
             return Response(serializer.data)
         print(f"Validation errors: {serializer.errors}")  # Debug print
         return Response(serializer.errors, status=400)
+
+    @action(detail=False, methods=['post'])
+    def upload_avatar(self, request):
+        """Upload/replace current user's avatar. Expects multipart form with 'avatar'."""
+        user = request.user
+        file_obj = request.FILES.get('avatar')
+        if not file_obj:
+            return Response({'detail': "'avatar' file is required"}, status=400)
+        from .models import UserProfile
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.avatar = file_obj
+        profile.save(update_fields=['avatar'])
+        # Return updated user payload including avatar_url
+        data = UserSerializer(user, context={'request': request}).data
+        return Response(data)
 
     @action(detail=False, methods=['get', 'patch'])
     def privacy(self, request):

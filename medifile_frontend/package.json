@@ -18,6 +18,7 @@
     "axios": "^1.10.0",
     "expo": "54.0.12",
     "expo-av": "~16.0.7",
+    "expo-image-picker": "~16.0.6",
     "expo-location": "~19.0.7",
     "expo-status-bar": "~3.0.8",
     "expo-updates": "~29.0.12",

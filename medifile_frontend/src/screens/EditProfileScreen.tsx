@@ -27,6 +27,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { API } from '../api/client';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadAvatar } from '../api/profile';
 
 interface UserProfile {
   user_id: number;
@@ -99,6 +101,31 @@ const EditProfileScreen = ({ navigation }: any) => {
     }
   };
 
+  const handleChangePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'Please allow photo library access to change your picture.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+      await uploadAvatar(asset.uri);
+      await loadProfile();
+      Alert.alert('Success', 'Profile picture updated');
+    } catch (e: any) {
+      console.error('Avatar upload failed', e);
+      Alert.alert('Error', 'Failed to update profile picture');
+    }
+  };
+
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -150,7 +177,7 @@ const EditProfileScreen = ({ navigation }: any) => {
               source={require('../assets/images/avatars/profile_avatar.png')}
               style={styles.profilePicture}
             />
-            <TouchableOpacity style={styles.editPictureButton}>
+            <TouchableOpacity style={styles.editPictureButton} onPress={handleChangePhoto}>
               <Ionicons name="camera" size={20} color="#fff" />
             </TouchableOpacity>
           </View>

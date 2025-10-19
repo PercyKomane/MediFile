@@ -19,4 +19,22 @@ export const updatePrivacySettings = async (payload: Partial<PrivacySettings>): 
   return data as PrivacySettings;
 };
 
+export const uploadAvatar = async (uri: string) => {
+  const form = new FormData();
+  // Infer filename and type crudely; Expo provides uri like file://...
+  const filename = uri.split('/').pop() || `avatar_${Date.now()}.jpg`;
+  const match = /\.([a-zA-Z0-9]+)$/.exec(filename || '');
+  const type = match ? `image/${match[1]}` : 'image/jpeg';
+  form.append('avatar', {
+    // @ts-ignore react-native FormData file shape
+    uri,
+    name: filename,
+    type,
+  });
+  const { data } = await API.post('/me/upload_avatar/', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+};
+
 

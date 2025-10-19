@@ -14,13 +14,25 @@ from .models import (
 # --------------------------
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
     class Meta:
         model = UserProfile
         fields = '__all__'
+        read_only_fields = ['profile_id']
+
+    def get_avatar_url(self, obj):
+        try:
+            if obj.avatar and hasattr(obj.avatar, 'url'):
+                request = self.context.get('request') if hasattr(self, 'context') else None
+                return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
+        except Exception:
+            return None
+        return None
 
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(required=False)
+    avatar_url = serializers.SerializerMethodField()
     first_name = serializers.CharField(required=False, max_length=150, write_only=True)
     last_name = serializers.CharField(required=False, max_length=150, write_only=True)
     phone = serializers.CharField(required=False, allow_blank=True, write_only=True)
@@ -30,7 +42,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['user_id', 'email', 'role', 'is_active', 'created_at', 'profile', 
-                 'first_name', 'last_name', 'phone', 'address', 'date_of_birth']
+                 'first_name', 'last_name', 'phone', 'address', 'date_of_birth', 'avatar_url']
         read_only_fields = ['user_id', 'created_at', 'email', 'role']
 
     def to_representation(self, instance):
@@ -42,6 +54,13 @@ class UserSerializer(serializers.ModelSerializer):
             data['phone'] = instance.profile.phone
             data['address'] = instance.profile.address
             data['date_of_birth'] = instance.profile.date_of_birth
+            # surface avatar
+            try:
+                if instance.profile.avatar and hasattr(instance.profile.avatar, 'url'):
+                    request = self.context.get('request') if hasattr(self, 'context') else None
+                    data['avatar_url'] = request.build_absolute_uri(instance.profile.avatar.url) if request else instance.profile.avatar.url
+            except Exception:
+                pass
         return data
 
     def create(self, validated_data):
