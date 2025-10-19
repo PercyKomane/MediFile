@@ -1,5 +1,5 @@
 // src/screens/ProfileScreen.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,32 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { API } from '../api/client';
 
 const ProfileScreen = ({ navigation }: any) => {
   const { logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string>('');
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await API.get('/me/');
+        if (!mounted) return;
+        const first = (data?.first_name ?? '').trim();
+        const last = (data?.last_name ?? '').trim();
+        setDisplayName([first, last].filter(Boolean).join(' ') || data?.email || '');
+        setAvatarUrl(data?.avatar_url || null);
+      } catch {
+        // ignore; placeholder will be used
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleLogout = () => {
     Alert.alert(
@@ -84,10 +106,10 @@ const ProfileScreen = ({ navigation }: any) => {
         </TouchableOpacity>
 
         <Image
-          source={require('../assets/images/avatars/profile_avatar.png')}
+          source={avatarUrl ? { uri: avatarUrl } : require('../assets/images/avatars/profile_avatar.png')}
           style={styles.avatar}
         />
-        <Text style={styles.name}>Zoey Doe</Text>
+        <Text style={styles.name}>{displayName || 'My Profile'}</Text>
       </View>
 
       {/* White Card Options */}

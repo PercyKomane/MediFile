@@ -39,6 +39,7 @@ interface UserProfile {
   address?: string;
   date_of_birth?: string;
   role: string;
+  avatar_url?: string; // Added for avatar_url
 }
 
 const EditProfileScreen = ({ navigation }: any) => {
@@ -63,6 +64,11 @@ const EditProfileScreen = ({ navigation }: any) => {
       const response = await API.get('/me/');
       const userData = response.data;
       setProfile(userData);
+      // Preload avatar if available
+      if (userData?.avatar_url) {
+        // store on profile object; rendering uses this value
+        // no state needed beyond profile
+      }
       setFormData({
         first_name: userData.first_name || '',
         last_name: userData.last_name || '',
@@ -174,7 +180,7 @@ const EditProfileScreen = ({ navigation }: any) => {
         <View style={styles.profilePictureSection}>
           <View style={styles.profilePictureContainer}>
             <Image
-              source={require('../assets/images/avatars/profile_avatar.png')}
+              source={profile?.avatar_url ? { uri: profile.avatar_url } : require('../assets/images/avatars/profile_avatar.png')}
               style={styles.profilePicture}
             />
             <TouchableOpacity style={styles.editPictureButton} onPress={handleChangePhoto}>
