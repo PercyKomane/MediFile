@@ -250,9 +250,9 @@ const styles = StyleSheet.create({
     right: 20,
   },
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 150,
+    height: 150,
+    borderRadius: 100,
     marginBottom: 10,
     borderWidth: 2,
     borderColor: 'white',
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     borderRadius: 20,
     padding: 20,
-    marginTop: -20,
+    marginTop: -50,
     elevation: 5,
   },
   optionRow: {

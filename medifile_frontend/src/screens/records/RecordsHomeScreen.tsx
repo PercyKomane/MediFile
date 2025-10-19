@@ -42,8 +42,11 @@ export default function RecordsHomeScreen({ navigation }: any) {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0F8A83' }}>
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
       <View style={styles.headerCard}>
-        <Image source={require('../../assets/images/avatars/profile_avatar.png')} style={styles.avatar} />
-        <Text style={styles.name}>{profile?.profile?.first_name} {profile?.profile?.last_name}</Text>
+        <Image
+          source={profile?.avatar_url ? { uri: profile.avatar_url } : require('../../assets/images/avatars/profile_avatar.png')}
+          style={styles.avatar}
+        />
+        <Text style={styles.name}>{profile?.first_name || profile?.profile?.first_name} {profile?.last_name || profile?.profile?.last_name}</Text>
         <Text style={styles.sub}>ID: {profile?.user_id}</Text>
       </View>
 
