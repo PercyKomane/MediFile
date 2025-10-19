@@ -854,7 +854,7 @@ class MyProfileViewSet(viewsets.GenericViewSet):
 
     def list(self, request):
         user = request.user
-        data = UserSerializer(user).data
+        data = UserSerializer(user, context={'request': request}).data
         if hasattr(user, 'patient'):
             data['patient_id'] = user.patient.patient_id
         if hasattr(user, 'doctor'):

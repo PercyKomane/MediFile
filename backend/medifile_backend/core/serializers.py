@@ -45,6 +45,16 @@ class UserSerializer(serializers.ModelSerializer):
                  'first_name', 'last_name', 'phone', 'address', 'date_of_birth', 'avatar_url']
         read_only_fields = ['user_id', 'created_at', 'email', 'role']
 
+    def get_avatar_url(self, instance):
+        try:
+            if hasattr(instance, 'profile') and instance.profile and instance.profile.avatar:
+                request = self.context.get('request') if hasattr(self, 'context') else None
+                url = instance.profile.avatar.url
+                return request.build_absolute_uri(url) if request else url
+        except Exception:
+            return None
+        return None
+
     def to_representation(self, instance):
         """Custom representation to include profile fields directly"""
         data = super().to_representation(instance)
