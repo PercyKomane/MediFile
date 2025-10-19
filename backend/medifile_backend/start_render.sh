@@ -10,6 +10,12 @@ export DJANGO_SETTINGS_MODULE=medifile_backend.settings
 echo "[Render] Running migrations..."
 python manage.py migrate --noinput
 
+if [ "${RUN_SEEDS:-0}" = "1" ]; then
+  echo "[Render] Seeding initial data (hospitals, doctors, medicines, FAQs)..."
+  # Optional: change hospital name or drop the flag to avoid assignment
+  python manage.py seed_all --hospital "Johannesburg General Hospital" || true
+fi
+
 echo "[Render] Collecting static files..."
 python manage.py collectstatic --noinput
 

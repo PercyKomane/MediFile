@@ -5,7 +5,10 @@
     "slug": "medifile",
     "projectId": "6629476a-03ea-47a3-b855-532f2af3ef3b",
     "extra": {
-      "eas": { "projectId": "6629476a-03ea-47a3-b855-532f2af3ef3b" }
+      "eas": {
+        "projectId": "6629476a-03ea-47a3-b855-532f2af3ef3b"
+      },
+      "apiBaseUrl": "https://medifile-backend.onrender.com/api"
     },
     "version": "1.0.0",
     "orientation": "portrait",
@@ -30,10 +33,11 @@
     "web": {
       "favicon": "./src/assets/images/icons/MediFileLogo.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "@wrldofxan/medifile"
-      }
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6629476a-03ea-47a3-b855-532f2af3ef3b"
     }
   }
 }

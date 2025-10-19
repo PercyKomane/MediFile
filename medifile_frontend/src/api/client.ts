@@ -34,6 +34,12 @@ const logError = (error: any) => {
   return Promise.reject(error);
 };
 
+function sanitizeBaseUrl(url: string): string {
+  // Trim whitespace and normalize accidental spaces around the URL
+  const trimmed = url.trim();
+  return trimmed;
+}
+
 // IMPORTANT: This must point to your Django server, not the Metro bundler (8081).
 // If your Django runs on a different host/port, update accordingly.
 function resolveApiBaseUrl(): string {
@@ -42,7 +48,7 @@ function resolveApiBaseUrl(): string {
   const envUrl = (process as any)?.env?.EXPO_PUBLIC_API_BASE_URL as string | undefined;
   if (envUrl && typeof envUrl === 'string' && envUrl.startsWith('http')) {
     console.log('🔍 Debug - Using EXPO_PUBLIC_API_BASE_URL:', envUrl);
-    return envUrl;
+    return sanitizeBaseUrl(envUrl);
   }
 
   // 2) Next: app config extra (supports app.config.ts/js with { extra: { apiBaseUrl } })
@@ -54,7 +60,7 @@ function resolveApiBaseUrl(): string {
       anyConstants?.manifest?.extra?.apiBaseUrl;
     if (extraUrl && typeof extraUrl === 'string' && extraUrl.startsWith('http')) {
       console.log('🔍 Debug - Using extra.apiBaseUrl:', extraUrl);
-      return extraUrl;
+      return sanitizeBaseUrl(extraUrl);
     }
   } catch {}
 
@@ -70,7 +76,7 @@ function resolveApiBaseUrl(): string {
       const host = hostUri.split(':')[0];
       const url = `http://${host}:8000/api`;
       console.log('🔍 Debug - Resolved URL:', url);
-      return url;
+      return sanitizeBaseUrl(url);
     }
   } catch (error) {
     console.log('🔍 Debug - Error resolving URL:', error);
