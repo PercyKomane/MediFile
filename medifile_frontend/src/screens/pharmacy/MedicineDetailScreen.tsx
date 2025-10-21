@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Medicine, addToCart, getMyCart } from '../../api/pharmacy';
+import { getMedicineImageSource } from '../../utils/medicineImages';
 import { useAuth } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -169,10 +170,18 @@ const MedicineDetailScreen: React.FC<MedicineDetailScreenProps> = ({ navigation,
       <ScrollView style={styles.content}>
         {/* Medicine Image */}
         <View style={styles.imageContainer}>
-          <View style={[styles.medicineImage, styles.placeholderImage]}>
-            <Ionicons name="medical" size={80} color="#199A8E" />
-            <Text style={styles.placeholderText}>{medicine.name}</Text>
-          </View>
+          {getMedicineImageSource(medicine) ? (
+            <Image
+              source={getMedicineImageSource(medicine)!}
+              style={styles.medicineImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.medicineImage, styles.placeholderImage]}>
+              <Ionicons name="medical" size={80} color="#199A8E" />
+              <Text style={styles.placeholderText}>{medicine.name}</Text>
+            </View>
+          )}
         </View>
 
         {/* Medicine Info */}

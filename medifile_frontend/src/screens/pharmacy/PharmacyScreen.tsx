@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { listMedicines, getPopularMedicines, getSaleMedicines, getMedicineCategories, Medicine, addToCart, getMyCart, getMedicineById } from '../../api/pharmacy';
+import { getMedicineImageSource } from '../../utils/medicineImages';
 import { useAuth } from '../../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -188,10 +189,18 @@ const PharmacyScreen = ({ navigation, route }: PharmacyScreenProps) => {
       style={[styles.medicineCardBase, variant === 'grid' ? styles.medicineCardGrid : styles.medicineCardRail]}
       onPress={() => navigation.navigate('MedicineDetail', { medicine: item })}
     >
-      <View style={[styles.medicineImage, styles.placeholderImage]}>
-        <Ionicons name="medical" size={40} color="#199A8E" />
-        <Text style={styles.placeholderText}>{item.name}</Text>
-      </View>
+      {getMedicineImageSource(item) ? (
+        <Image
+          source={getMedicineImageSource(item)!}
+          style={styles.medicineImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles.medicineImage, styles.placeholderImage]}>
+          <Ionicons name="medical" size={40} color="#199A8E" />
+          <Text style={styles.placeholderText}>{item.name}</Text>
+        </View>
+      )}
       <View style={styles.medicineInfo}>
         <View style={styles.rowBetween}>
           <Text style={styles.medicineName} numberOfLines={2}>{item.name}</Text>

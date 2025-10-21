@@ -1,0 +1,60 @@
+Collecting psycopg2-binary==2.9.9
+  Obtaining dependency information for psycopg2-binary==2.9.9 from https://files.pythonhosted.org/packages/7b/08/9c66c269b0d417a0af9fb969535f0371b8c538633535a7a6a5ca3f9231e2/psycopg2_binary-2.9.9-cp312-cp312-win_amd64.whl.metadata
+  Using cached psycopg2_binary-2.9.9-cp312-cp312-win_amd64.whl.metadata (4.6 kB)
+Collecting channels==4.1.0
+  Obtaining dependency information for channels==4.1.0 from https://files.pythonhosted.org/packages/a3/68/d9098a51b1661c00c70bb9ce7c42d65044e475b8d1c16ba05b8ee32b7f49/channels-4.1.0-py3-none-any.whl.metadata
+  Using cached channels-4.1.0-py3-none-any.whl.metadata (4.5 kB)
+Requirement already satisfied: daphne==4.1.2 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (4.1.2)
+Collecting channels-redis==4.2.0
+  Obtaining dependency information for channels-redis==4.2.0 from https://files.pythonhosted.org/packages/11/df/7638755c3adc8463a872562082c66737d1b7d754c2040a2ddfe3c8800f67/channels_redis-4.2.0-py3-none-any.whl.metadata
+  Using cached channels_redis-4.2.0-py3-none-any.whl.metadata (10 kB)
+Collecting twisted
+  Obtaining dependency information for twisted from https://files.pythonhosted.org/packages/eb/66/ab7efd8941f0bc7b2bd555b0f0471bff77df4c88e0cc31120c82737fec77/twisted-25.5.0-py3-none-any.whl.metadata
+  Using cached twisted-25.5.0-py3-none-any.whl.metadata (22 kB)
+Requirement already satisfied: zope.interface in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (8.0.1)
+Collecting service_identity
+  Obtaining dependency information for service_identity from https://files.pythonhosted.org/packages/08/2c/ca6dd598b384bc1ce581e24aaae0f2bed4ccac57749d5c3befbb5e742081/service_identity-24.2.0-py3-none-any.whl.metadata
+  Using cached service_identity-24.2.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting attrs
+  Obtaining dependency information for attrs from https://files.pythonhosted.org/packages/3a/2a/7cc015f5b9f5db42b7d48157e23356022889fc354a2813c15934b7cb5c0e/attrs-25.4.0-py3-none-any.whl.metadata
+  Using cached attrs-25.4.0-py3-none-any.whl.metadata (10 kB)
+Requirement already satisfied: Django>=4.2 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from channels==4.1.0) (4.2.7)
+Requirement already satisfied: asgiref<4,>=3.6.0 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from channels==4.1.0) (3.10.0)
+Collecting autobahn>=22.4.2 (from daphne==4.1.2)
+  Obtaining dependency information for autobahn>=22.4.2 from https://files.pythonhosted.org/packages/13/ee/a6475f39ef6c6f41c33da6b193e0ffd2c6048f52e1698be6253c59301b72/autobahn-24.4.2-py2.py3-none-any.whl.metadata
+  Using cached autobahn-24.4.2-py2.py3-none-any.whl.metadata (18 kB)
+Requirement already satisfied: redis>=4.6 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from channels-redis==4.2.0) (6.4.0)
+Requirement already satisfied: msgpack~=1.0 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from channels-redis==4.2.0) (1.1.2)
+Collecting automat>=24.8.0 (from twisted)
+  Obtaining dependency information for automat>=24.8.0 from https://files.pythonhosted.org/packages/02/ff/1175b0b7371e46244032d43a56862d0af455823b5280a50c63d99cc50f18/automat-25.4.16-py3-none-any.whl.metadata
+  Using cached automat-25.4.16-py3-none-any.whl.metadata (8.4 kB)
+Collecting constantly>=15.1 (from twisted)
+  Obtaining dependency information for constantly>=15.1 from https://files.pythonhosted.org/packages/b8/40/c199d095151addf69efdb4b9ca3a4f20f70e20508d6222bffb9b76f58573/constantly-23.10.4-py3-none-any.whl.metadata
+  Using cached constantly-23.10.4-py3-none-any.whl.metadata (1.8 kB)
+Collecting hyperlink>=17.1.1 (from twisted)
+  Obtaining dependency information for hyperlink>=17.1.1 from https://files.pythonhosted.org/packages/6e/aa/8caf6a0a3e62863cbb9dab27135660acba46903b703e224f14f447e57934/hyperlink-21.0.0-py2.py3-none-any.whl.metadata
+  Using cached hyperlink-21.0.0-py2.py3-none-any.whl.metadata (1.5 kB)
+Collecting incremental>=24.7.0 (from twisted)
+  Obtaining dependency information for incremental>=24.7.0 from https://files.pythonhosted.org/packages/0d/38/221e5b2ae676a3938c2c1919131410c342b6efc2baffeda395dd66eeca8f/incremental-24.7.2-py3-none-any.whl.metadata
+  Using cached incremental-24.7.2-py3-none-any.whl.metadata (8.1 kB)
+Requirement already satisfied: typing-extensions>=4.2.0 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from twisted) (4.15.0)
+Collecting cryptography (from service_identity)
+  Obtaining dependency information for cryptography from https://files.pythonhosted.org/packages/a8/cd/2f83cafd47ed2dc5a3a9c783ff5d764e9e70d3a160e0df9a9dcd639414ce/cryptography-46.0.2-cp311-abi3-win_amd64.whl.metadata
+  Using cached cryptography-46.0.2-cp311-abi3-win_amd64.whl.metadata (5.7 kB)
+Collecting pyasn1 (from service_identity)
+  Obtaining dependency information for pyasn1 from https://files.pythonhosted.org/packages/c8/f1/d6a797abb14f6283c0ddff96bbdd46937f64122b8c925cab503dd37f8214/pyasn1-0.6.1-py3-none-any.whl.metadata
+  Using cached pyasn1-0.6.1-py3-none-any.whl.metadata (8.4 kB)
+Collecting pyasn1-modules (from service_identity)
+  Obtaining dependency information for pyasn1-modules from https://files.pythonhosted.org/packages/47/8d/d529b5d697919ba8c11ad626e835d4039be708a35b0d22de83a269a6682c/pyasn1_modules-0.4.2-py3-none-any.whl.metadata
+  Using cached pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Requirement already satisfied: txaio>=21.2.1 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from autobahn>=22.4.2->daphne==4.1.2) (25.9.2)
+Requirement already satisfied: setuptools in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from autobahn>=22.4.2->daphne==4.1.2) (80.9.0)
+Collecting cffi>=2.0.0 (from cryptography->service_identity)
+  Obtaining dependency information for cffi>=2.0.0 from https://files.pythonhosted.org/packages/f8/ed/13bd4418627013bec4ed6e54283b1959cf6db888048c7cf4b4c3b5b36002/cffi-2.0.0-cp312-cp312-win_amd64.whl.metadata
+  Using cached cffi-2.0.0-cp312-cp312-win_amd64.whl.metadata (2.6 kB)
+Requirement already satisfied: sqlparse>=0.3.1 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from Django>=4.2->channels==4.1.0) (0.5.3)
+Requirement already satisfied: tzdata in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from Django>=4.2->channels==4.1.0) (2025.2)
+Requirement already satisfied: idna>=2.5 in c:\users\tshepo\appdata\local\programs\python\python312\lib\site-packages (from hyperlink>=17.1.1->twisted) (3.10)
+Collecting pyopenssl>=21.0.0 (from twisted)
+  Obtaining dependency information for pyopenssl>=21.0.0 from https://files.pythonhosted.org/packages/d1/81/ef2b1dfd1862567d573a4fdbc9f969067621764fbb74338496840a1d2977/pyopenssl-25.3.0-py3-none-any.whl.metadata
+  Using cached pyopenssl-25.3.0-py3-none-any.whl.metadata (17 kB)
