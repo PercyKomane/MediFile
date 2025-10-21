@@ -22,6 +22,12 @@ if [ "${UPDATE_MEDICINE_IMAGES:-0}" = "1" ]; then
   python manage.py update_medicine_images --file backend/medifile_backend/core/fixtures/medicine_images.json || true
 fi
 
+# Optionally seed demo records for James Bond (set SEED_JAMES=1)
+if [ "${SEED_JAMES:-0}" = "1" ]; then
+  echo "[Render] Seeding demo medical records for James Bond..."
+  python manage.py seed_james_records --email james@gmail.com || true
+fi
+
 echo "[Render] Collecting static files..."
 python manage.py collectstatic --noinput
 
