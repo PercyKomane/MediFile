@@ -46,6 +46,8 @@ const LineChartMock = ({
   normalMin,
   normalMax,
   chartHeight,
+  xLeftLabel,
+  xRightLabel,
 }: {
   title: string;
   points: number[];
@@ -57,6 +59,8 @@ const LineChartMock = ({
   normalMin?: number;
   normalMax?: number;
   chartHeight?: number;
+  xLeftLabel?: string;
+  xRightLabel?: string;
 }) => {
   // Map points (0-100 scale) to positions; keep mock simple
   const coords = points.map((p, i) => ({ left: `${10 + i * (75 / Math.max(points.length - 1, 1))}%`, top: `${100 - Math.min(Math.max(p, 0), 100)}%` }));
@@ -99,8 +103,8 @@ const LineChartMock = ({
           </React.Fragment>
         ))}
         {/* X labels */}
-        <Text style={[styles.xTickLabel, { left: '10%' }]}>Old</Text>
-        <Text style={[styles.xTickLabel, { right: '5%' }]}>New</Text>
+        <Text style={[styles.xTickLabel, { left: '10%' }]}>{xLeftLabel || 'Old'}</Text>
+        <Text style={[styles.xTickLabel, { right: '5%' }]}>{xRightLabel || 'New'}</Text>
         {normalMin !== undefined && normalMax !== undefined && (
           <View style={[styles.normalBand, { top: `${100 - normalMax}%`, height: `${normalMax - normalMin}%` }]} />
         )}
@@ -114,17 +118,17 @@ const LineChartMock = ({
           />
         ))}
         <View style={styles.line} />
-        {/* Smooth curve through dots (approximated with many small segments) */}
-        {curvePoints.map((pt, idx) => {
+        {/* Connect anchors with straight segments to guarantee visible connections */}
+        {pixelCoords.map((pt, idx) => {
           if (idx === 0) return null;
-          const prev = curvePoints[idx - 1];
+          const prev = pixelCoords[idx - 1];
           const dx = pt.x - prev.x;
           const dy = pt.y - prev.y;
           const len = Math.sqrt(dx * dx + dy * dy);
           const angle = Math.atan2(dy, dx);
           return (
             <View
-              key={`cseg-${idx}`}
+              key={`aseg-${idx}`}
               style={{
                 position: 'absolute',
                 left: prev.x,
@@ -172,29 +176,57 @@ export default function ChartsScreen() {
   const windowH = Dimensions.get('window').height;
   const chartHeight = Math.max(280, Math.floor(windowH * 0.42));
   const insets = useSafeAreaInsets();
-  const recent = useMemo(() => vitals.slice(0, windowSize).reverse(), [vitals, windowSize]);
+  const totalCount = vitals?.length || 0;
+  const recent = useMemo(() => {
+    if (!Array.isArray(vitals) || vitals.length === 0) return [] as any[];
+    const sorted = [...vitals].sort((a, b) => {
+      const ad = new Date(a.recorded_at || a.recordedAt || a.recorded || a.created_at || 0).getTime();
+      const bd = new Date(b.recorded_at || b.recordedAt || b.recorded || b.created_at || 0).getTime();
+      return ad - bd; // oldest -> newest
+    });
+    return sorted.slice(-windowSize);
+  }, [vitals, windowSize]);
+  const fitLength = (arr: number[], len: number) => arr.slice(-len);
   const normalize = (value: number, min: number, max: number) => ((value - min) / (max - min)) * 100;
+  const parseDate = (d: any) => {
+    try { return new Date(d); } catch { return null; }
+  };
+  const fmt = (d: Date | null) => d ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+
   const tempSeries = useMemo(() => {
     const values = recent
       .map(v => parseFloat(String(v.temperature_c)))
       .filter(v => !isNaN(v));
-    const fallback = [36.5, 36.8, 37.0, 36.7, 36.9];
-    const domain = { min: 35, max: 40 };
-    const arr = (values.length ? values : fallback).map(x => normalize(x, domain.min, domain.max));
+    const fallback = fitLength([36.5, 36.8, 37.0, 36.7, 36.9], windowSize);
+    const raw = (values.length ? values.slice(-windowSize) : fallback);
+    const minVal = Math.min(...raw);
+    const maxVal = Math.max(...raw);
+    const pad = 0.2;
+    const domain = { min: Math.floor((minVal - pad) * 10) / 10, max: Math.ceil((maxVal + pad) * 10) / 10 };
+    const arr = raw.map(x => normalize(x, domain.min, domain.max));
     return { arr, domain };
   }, [recent]);
   const bpSeries = useMemo(() => {
     const sys = recent.map(v => v.systolic_bp).filter((n: any) => typeof n === 'number');
     const dia = recent.map(v => v.diastolic_bp).filter((n: any) => typeof n === 'number');
-    const domain = { min: 60, max: 160 };
-    const sysArr = (sys.length ? sys : [120, 121, 119, 117, 121]).map((x: number) => normalize(x, domain.min, domain.max));
-    const diaArr = (dia.length ? dia : [80, 78, 77, 74, 80]).map((x: number) => normalize(x, domain.min, domain.max));
+    const sysRaw = sys.length ? sys.slice(-windowSize) : fitLength([120, 121, 119, 117, 121], windowSize);
+    const diaRaw = dia.length ? dia.slice(-windowSize) : fitLength([80, 78, 77, 74, 80], windowSize);
+    const minVal = Math.min(...sysRaw, ...diaRaw);
+    const maxVal = Math.max(...sysRaw, ...diaRaw);
+    const spanPad = 10;
+    const domain = { min: Math.max(40, Math.floor((minVal - spanPad))), max: Math.ceil((maxVal + spanPad)) };
+    const sysArr = sysRaw.map((x: number) => normalize(x, domain.min, domain.max));
+    const diaArr = diaRaw.map((x: number) => normalize(x, domain.min, domain.max));
     return { sysArr, diaArr, domain };
   }, [recent]);
   const hrSeries = useMemo(() => {
     const hr = recent.map(v => v.heart_rate_bpm).filter((n: any) => typeof n === 'number');
-    const domain = { min: 50, max: 120 };
-    const arr = (hr.length ? hr : [72, 75, 73, 70, 74]).map((x: number) => normalize(x, domain.min, domain.max));
+    const raw = hr.length ? hr.slice(-windowSize) : fitLength([72, 75, 73, 70, 74], windowSize);
+    const minVal = Math.min(...raw);
+    const maxVal = Math.max(...raw);
+    const pad = 5;
+    const domain = { min: Math.max(40, Math.floor(minVal - pad)), max: Math.ceil(maxVal + pad) };
+    const arr = raw.map((x: number) => normalize(x, domain.min, domain.max));
     return { arr, domain };
   }, [recent]);
   // Top summaries reflect the current window (avg of last N)
@@ -255,6 +287,8 @@ export default function ChartsScreen() {
             normalMin={((36.1 - tempSeries.domain.min) / (tempSeries.domain.max - tempSeries.domain.min)) * 100}
             normalMax={((37.2 - tempSeries.domain.min) / (tempSeries.domain.max - tempSeries.domain.min)) * 100}
             chartHeight={chartHeight}
+            xLeftLabel={fmt(parseDate(recent[0]?.recorded_at || recent[0]?.recordedAt || recent[0]?.recorded_at))}
+            xRightLabel={fmt(parseDate(recent[recent.length - 1]?.recorded_at || recent[recent.length - 1]?.recordedAt || recent[recent.length - 1]?.recorded_at))}
           />
         )}
 
@@ -279,8 +313,8 @@ export default function ChartsScreen() {
               );
             })}
             {/* X labels */}
-            <Text style={[styles.xTickLabel, { left: '10%' }]}>Old</Text>
-            <Text style={[styles.xTickLabel, { right: '5%' }]}>New</Text>
+            <Text style={[styles.xTickLabel, { left: '10%' }]}>{fmt(parseDate(recent[0]?.recorded_at || recent[0]?.recordedAt || recent[0]?.recorded_at))}</Text>
+            <Text style={[styles.xTickLabel, { right: '5%' }]}>{fmt(parseDate(recent[recent.length - 1]?.recorded_at || recent[recent.length - 1]?.recordedAt || recent[recent.length - 1]?.recorded_at))}</Text>
             {/* Normal bands */}
             <View style={[styles.normalBand, { top: `${100 - ((120 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100}%`, height: `${(((120 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100) - (((90 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100)}%`, backgroundColor: '#90CAF9', opacity: 0.25 }]} />
             <View style={[styles.normalBand, { top: `${100 - ((80 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100}%`, height: `${(((80 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100) - (((60 - bpSeries.domain.min) / (bpSeries.domain.max - bpSeries.domain.min)) * 100)}%`, backgroundColor: '#F8BBD0', opacity: 0.25 }]} />
@@ -292,7 +326,7 @@ export default function ChartsScreen() {
               <View key={`d${i}`} style={[styles.dot, { left: `${10 + i * (75 / Math.max(bpSeries.diaArr.length - 1, 1))}%`, top: `${100 - Math.min(Math.max(p, 0), 100)}%`, backgroundColor: '#E91E63' }]} />
             ))}
           </View>
-          <View style={styles.legendRow}>
+        <View style={styles.legendRow}>
             <View style={[styles.legendSwatch, { backgroundColor: '#90CAF9' }]} />
             <Text style={styles.legendText}>Normal systolic</Text>
             <View style={[styles.legendSwatch, { backgroundColor: '#F8BBD0' }]} />
@@ -302,6 +336,7 @@ export default function ChartsScreen() {
             <View style={[styles.legendSwatch, { backgroundColor: '#E91E63' }]} />
             <Text style={styles.legendText}>Diastolic</Text>
           </View>
+          <Text style={styles.caption}>{`Showing last ${Math.max(bpSeries.sysArr.length, bpSeries.diaArr.length)} of ${totalCount} readings`}</Text>
           </View>
         )}
 
@@ -317,6 +352,8 @@ export default function ChartsScreen() {
             normalMin={((60 - hrSeries.domain.min) / (hrSeries.domain.max - hrSeries.domain.min)) * 100}
             normalMax={((100 - hrSeries.domain.min) / (hrSeries.domain.max - hrSeries.domain.min)) * 100}
             chartHeight={chartHeight}
+            xLeftLabel={fmt(parseDate(recent[0]?.recorded_at || recent[0]?.recordedAt || recent[0]?.recorded_at))}
+            xRightLabel={fmt(parseDate(recent[recent.length - 1]?.recorded_at || recent[recent.length - 1]?.recordedAt || recent[recent.length - 1]?.recorded_at))}
           />
         )}
 
@@ -326,6 +363,7 @@ export default function ChartsScreen() {
           <Text style={styles.noteText}>
             The green band shows the typical normal range. Dots represent your recent readings. Values above or below the band may warrant attention.
           </Text>
+          <Text style={[styles.noteText, { marginTop: 6 }]}>{`Window: Last ${recent.length} of ${totalCount} readings`}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -345,6 +383,7 @@ const styles = StyleSheet.create({
   legendRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
   legendSwatch: { width: 12, height: 12, borderRadius: 2 },
   legendText: { color: '#334B48', fontSize: 12 },
+  caption: { color: '#5C7A76', fontSize: 11, marginTop: 4 },
   axisY: { position: 'absolute', left: '8%', top: 0, bottom: 0, width: 1, backgroundColor: '#B3CBC7' },
   axisX: { position: 'absolute', left: 0, right: 0, bottom: '6%', height: 1, backgroundColor: '#B3CBC7' },
   yTick: { position: 'absolute', left: '8%', width: 6, height: 1, backgroundColor: '#8FB9B3', marginLeft: -3 },
