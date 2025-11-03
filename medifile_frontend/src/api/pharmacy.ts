@@ -58,6 +58,26 @@ export interface Order {
   user: number;
 }
 
+// Prescriptions
+export interface PrescriptionItem {
+  item_id: number;
+  prescription: number;
+  medication_name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+}
+
+export interface Prescription {
+  prescription_id: number;
+  patient: number;
+  doctor: number;
+  issue_date: string;
+  expiry_date?: string;
+  notes?: string;
+  items: PrescriptionItem[];
+}
+
 // Medicine APIs
 export const listMedicines = async (params?: { search?: string; category?: string }) => {
   const response = await API.get('/medicines/', { params });
@@ -159,5 +179,16 @@ export const getOrderById = async (orderId: number) => {
 
 export const cancelOrder = async (orderId: number) => {
   const response = await API.post(`/orders/${orderId}/cancel_order/`);
+  return response.data;
+};
+
+// Prescription APIs
+export const listMyPrescriptions = async (): Promise<Prescription[]> => {
+  const response = await API.get('/prescriptions/my/');
+  return response.data;
+};
+
+export const getPrescriptionById = async (id: number): Promise<Prescription> => {
+  const response = await API.get(`/prescriptions/${id}/`);
   return response.data;
 };

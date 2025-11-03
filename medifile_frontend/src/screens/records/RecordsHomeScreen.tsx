@@ -54,6 +54,7 @@ export default function RecordsHomeScreen({ navigation }: any) {
         <RecordItem icon="sparkles-outline" title="Allergies" subtitle={`${countBy(h => h.diagnosis?.toLowerCase().includes('allerg'))} records found`} onPress={() => navigation.navigate('Allergies')} />
         <RecordItem icon="pulse-outline" title="Diagnoses/Conditions" subtitle={`${history.length} records found`} onPress={() => navigation.navigate('Diagnoses')} />
         <RecordItem icon="newspaper-outline" title="Reports" subtitle={`Recent reports`} onPress={() => navigation.navigate('Reports')} />
+        <RecordItem icon="document-text-outline" title="Prescriptions" subtitle={`View prescriptions from your doctors`} onPress={() => navigation.navigate('Pharmacy', { openPrescriptionModal: true })} />
         <RecordItem icon="stats-chart-outline" title="Charts" subtitle={`7 days`} onPress={() => navigation.navigate('Charts')} />
         <RecordItem icon="medkit-outline" title="Medications & Supplements" subtitle={`${meds.length} records found`} onPress={() => navigation.navigate('Medications')} />
         <RecordItem icon="thermometer-outline" title="Symptoms" subtitle={`${symptoms.length} records found`} onPress={() => navigation.navigate('Symptoms')} />

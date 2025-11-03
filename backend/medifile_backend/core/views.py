@@ -846,6 +846,19 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
     serializer_class = PrescriptionSerializer
     permission_classes = [IsAuthenticated]
 
+    @action(detail=False, methods=['get'])
+    def my(self, request):
+        """List prescriptions for the current user (as patient or doctor)."""
+        user = request.user
+        if hasattr(user, 'patient'):
+            qs = Prescription.objects.filter(patient=user.patient).order_by('-issue_date')
+        elif hasattr(user, 'doctor'):
+            qs = Prescription.objects.filter(doctor=user.doctor).order_by('-issue_date')
+        else:
+            qs = Prescription.objects.none()
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
 
 class MyProfileViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
