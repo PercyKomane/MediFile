@@ -112,15 +112,13 @@ const PharmacyScreen = ({ navigation, route }: PharmacyScreenProps) => {
     try {
       setLoading(true);
       contentOpacity.setValue(0);
-      const [medicinesData, popularData, saleData, categoriesData] = await Promise.all([
-        listMedicines(),
+      const [medicinesData, _popularData, _saleData, categoriesData] = await Promise.all([
+        selectedCategory ? listMedicines({ category: selectedCategory }) : listMedicines(),
         getPopularMedicines(),
         getSaleMedicines(),
         getMedicineCategories(),
       ]);
       setMedicines(medicinesData);
-      setPopularMedicines(popularData);
-      setSaleMedicines(saleData);
       const uniqueCategories = [...new Set(categoriesData as string[])];
       setCategories(uniqueCategories);
       Animated.timing(contentOpacity, { toValue: 1, duration: 250, useNativeDriver: true }).start();
@@ -196,7 +194,7 @@ const PharmacyScreen = ({ navigation, route }: PharmacyScreenProps) => {
       }
       await loadCartCount();
       setSelectModalVisible(false);
-      navigation.navigate('Cart');
+      Alert.alert('Success', 'Prescription medicines added to cart.');
     } catch (e) {
       Alert.alert('Error', 'Failed to add selected medicines to cart.');
     } finally {
@@ -216,7 +214,9 @@ const PharmacyScreen = ({ navigation, route }: PharmacyScreenProps) => {
       return;
     }
     try {
-      const searchResults = await listMedicines({ search: searchQuery });
+      const params: any = { search: searchQuery };
+      if (selectedCategory) params.category = selectedCategory;
+      const searchResults = await listMedicines(params);
       setMedicines(searchResults);
     } catch (error) {
       console.error('Search failed:', error);
@@ -430,8 +430,8 @@ const PharmacyScreen = ({ navigation, route }: PharmacyScreenProps) => {
           />
         </View>
 
-        {/* Recently viewed */}
-        {recentlyViewed.length > 0 && (
+        {/* Recently viewed (hidden while a category filter is active) */}
+        {recentlyViewed.length > 0 && !selectedCategory && (
           <View style={styles.section}>
             {renderSectionHeader('Recently viewed')}
             <FlatList
@@ -446,8 +446,8 @@ const PharmacyScreen = ({ navigation, route }: PharmacyScreenProps) => {
           </View>
         )}
 
-        {/* For you */}
-        {recommended.length > 0 && (
+        {/* For you (hidden while a category filter is active) */}
+        {recommended.length > 0 && !selectedCategory && (
           <View style={styles.section}>
             {renderSectionHeader('For you')}
             <FlatList
@@ -507,12 +507,21 @@ const PharmacyScreen = ({ navigation, route }: PharmacyScreenProps) => {
                 ) : prescriptions.length === 0 ? (
                   <Text>No prescriptions found.</Text>
                 ) : (
-                  prescriptions.map(rx => (
-                    <TouchableOpacity key={rx.prescription_id} style={styles.selectRow} onPress={() => { setSelectedPrescription(rx); computeMatches(rx); }}>
-                      <Ionicons name="document-text" size={20} color="#199A8E" />
-                      <Text style={styles.selectRowText}>Prescription #{rx.prescription_id} • {new Date(rx.issue_date).toLocaleDateString()}</Text>
-                    </TouchableOpacity>
-                  ))
+                  prescriptions.map(rx => {
+                    const itemNames = (rx.items || []).map(i => i.medication_name).filter(Boolean);
+                    const primary = (rx.notes && rx.notes.trim()) || itemNames.slice(0, 2).join(', ');
+                    const extraCount = Math.max(0, itemNames.length - 2);
+                    const secondary = `${new Date(rx.issue_date).toLocaleDateString()}${extraCount > 0 ? ` • +${extraCount} more` : ''}`;
+                    return (
+                      <TouchableOpacity key={rx.prescription_id} style={styles.selectRow} onPress={() => { setSelectedPrescription(rx); computeMatches(rx); }}>
+                        <Ionicons name="document-text" size={20} color="#199A8E" />
+                        <View style={{ marginLeft: 10, flex: 1 }}>
+                          <Text style={styles.selectRowText} numberOfLines={1}>{primary || `Prescription #${rx.prescription_id}`}</Text>
+                          <Text style={{ fontSize: 12, color: '#666' }} numberOfLines={1}>{secondary}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })
                 )}
               </ScrollView>
             ) : (
@@ -534,7 +543,7 @@ const PharmacyScreen = ({ navigation, route }: PharmacyScreenProps) => {
                   <Text style={{ fontWeight: '700', color: '#199A8E' }}>R {matchTotal.toFixed(2)}</Text>
                 </View>
                 <TouchableOpacity style={[styles.uploadButton, { marginTop: 12, opacity: isAddingSelected ? 0.7 : 1 }]} onPress={addSelectedToCart} disabled={isAddingSelected || matchedMedicineIds.length === 0}>
-                  <Text style={styles.uploadButtonText}>{isAddingSelected ? 'Adding...' : 'Add to cart & checkout'}</Text>
+                  <Text style={styles.uploadButtonText}>{isAddingSelected ? 'Adding...' : 'Add to cart'}</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -568,8 +577,8 @@ const styles = StyleSheet.create({
   prescriptionTitle: { fontSize: 16, fontWeight: '600', color: '#333' },
   uploadButton: { backgroundColor: '#199A8E', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
   uploadButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: '#fff', padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '85%' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  modalCard: { backgroundColor: '#fff', padding: 16, borderRadius: 16, width: '90%', maxHeight: '80%' },
   selectRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee' },
   selectRowText: { marginLeft: 10, fontSize: 14, color: '#333' },
   categoriesContainer: { marginBottom: 20 },
