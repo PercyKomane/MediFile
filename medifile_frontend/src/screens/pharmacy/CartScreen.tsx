@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getMyCart, updateCartItem, removeCartItem, clearCart, Cart, CartItem } from '../../api/pharmacy';
+import { getMedicineImageSource } from '../../utils/medicineImages';
 import { useAuth } from '../../context/AuthContext';
 
 interface CartScreenProps {
@@ -151,10 +152,14 @@ const CartScreen = ({ navigation }: CartScreenProps) => {
     <View key={item.cart_item_id} style={styles.cartItem}>
       {/* Medicine Image */}
       <View style={styles.imageContainer}>
-        <View style={[styles.medicineImage, styles.placeholderImage]}>
-          <Ionicons name="medical" size={30} color="#199A8E" />
-          <Text style={styles.placeholderText}>{item.medicine.name}</Text>
-        </View>
+        {getMedicineImageSource(item.medicine) ? (
+          <Image source={getMedicineImageSource(item.medicine)!} style={styles.medicineImage} resizeMode="cover" />
+        ) : (
+          <View style={[styles.medicineImage, styles.placeholderImage]}>
+            <Ionicons name="medical" size={30} color="#199A8E" />
+            <Text style={styles.placeholderText}>{item.medicine.name}</Text>
+          </View>
+        )}
       </View>
 
       {/* Medicine Info */}
