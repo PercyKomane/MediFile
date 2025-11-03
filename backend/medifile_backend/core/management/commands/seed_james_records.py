@@ -12,6 +12,10 @@ from core.models import (
     SymptomEntry,
     DnaTest,
     PatientMedicationRecord,
+    Doctor,
+    Hospital,
+    Prescription,
+    PrescriptionItem,
 )
 
 
@@ -123,6 +127,67 @@ class Command(BaseCommand):
                     "is_active": active,
                 },
             )
+
+        # Prescriptions aligned to conditions
+        # Pick an existing doctor, otherwise create a simple demo doctor
+        doctor = Doctor.objects.first()
+        if doctor is None:
+            # minimal demo doctor + hospital
+            hosp, _ = Hospital.objects.get_or_create(
+                name="MediFile General Hospital",
+                defaults={"address": "123 Health St", "contact_number": "+27 11 000 0000"},
+            )
+            # create a user for doctor
+            doc_user, _ = User.objects.get_or_create(
+                email="dr.demo@medifile.com",
+                defaults={"role": "doctor"},
+            )
+            doctor = Doctor.objects.create(
+                user=doc_user,
+                specialization="General Practitioner",
+                license_number="DEMO-LIC-001",
+                hospital=hosp,
+            )
+
+        # Diabetes prescription: Metformin
+        diabetes_rx, _ = Prescription.objects.get_or_create(
+            patient=patient,
+            doctor=doctor,
+            notes="Diabetes management",
+            defaults={
+                "issue_date": date.today() - timedelta(days=30),
+                "expiry_date": date.today() + timedelta(days=60),
+            },
+        )
+        PrescriptionItem.objects.update_or_create(
+            prescription=diabetes_rx,
+            medication_name="Metformin",
+            dosage="500 mg",
+            defaults={
+                "frequency": "Twice daily",
+                "duration": "90 days",
+            },
+        )
+
+        # Allergy prescription: Loratadine
+        allergy_rx, _ = Prescription.objects.get_or_create(
+            patient=patient,
+            doctor=doctor,
+            notes="Allergic rhinitis management",
+            defaults={
+                "issue_date": date.today() - timedelta(days=10),
+                "expiry_date": date.today() + timedelta(days=20),
+            },
+        )
+        PrescriptionItem.objects.update_or_create(
+            prescription=allergy_rx,
+            medication_name="Loratadine",
+            dosage="10 mg",
+            defaults={
+                "frequency": "Once daily as needed",
+                "duration": "30 days",
+            },
+        )
 
         self.stdout.write(self.style.SUCCESS(f"Seeded records for patient {user.email}"))
 
